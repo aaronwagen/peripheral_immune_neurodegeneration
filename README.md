@@ -3,7 +3,7 @@
 <!-- badges: start -->
 <!-- badges: end -->
 
-# Peripheral immune cells contributing to neurodegeneration
+# Peripheral immune cells contribute to neurodegeneration in an ancestry specific manner
 
 ## Background
 
