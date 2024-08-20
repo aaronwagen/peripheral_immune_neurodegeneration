@@ -3,7 +3,7 @@
 <!-- badges: start -->
 <!-- badges: end -->
 
-# Peripheral immune cells contribute to neurodegeneration in an ancestry specific manner
+# Peripheral immune cells contributing to neurodegeneration
 
 ## Background
 
@@ -27,16 +27,16 @@ comparing African, East Asian and European ancestries.
 
 Within this repository you will find:
 
-| Directory                        | Description                                                                                                                                                |
-|----------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [docs](docs)                     | Contains all `.Rmd`s and their corresponding `.html`s describing analyses performed for this project. These can be view interactively at: [link](#TODO)    |
-| [logs](logs)                     | For any scripts that were run outside of an `.Rmd` (e.g. scripts from the [scripts](scripts) directory), a log file was recorded and can be accessed here. |
-| [raw_data](raw_data)             | External tables and genomic datasets used in analyses (not linked to github due to size, see published article for sources).                               |
-| [processed_data](processed_data) | Results output from colocalisation analysis pipelines (not linked to github due to size).                                                                  |
-| [derived_data](derived_data)     | Processed results.                                                                                                                                         |
-| [renv](renv)                     | `renv`-related scripts                                                                                                                                     |
-| [r_scripts](r_scripts)           | Contains R based scripts used throughout the analysis, also referenced in respective `.Rmd`.                                                               |
-| [scripts](scripts)               | Contains analysis scripts.                                                                                                                                 |
+| Directory                        | Description                                                                                                                                                                                                   |
+|----------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [docs](docs)                     | Contains all `.Rmd`s and their corresponding `.html`s describing analyses performed for this project. These can be view interactively at: <https://aaronwagen.github.io/peripheral_immune_neurodegeneration/> |
+| [logs](logs)                     | For any scripts that were run outside of an `.Rmd` (e.g. scripts from the [scripts](scripts) directory), a log file was recorded and can be accessed here.                                                    |
+| [raw_data](raw_data)             | External tables and genomic datasets used in analyses (not linked to github due to size, see published article for sources).                                                                                  |
+| [processed_data](processed_data) | Results output from colocalisation analysis pipelines (not linked to github due to size).                                                                                                                     |
+| [derived_data](derived_data)     | Processed results.                                                                                                                                                                                            |
+| [renv](renv)                     | `renv`-related scripts                                                                                                                                                                                        |
+| [r_scripts](r_scripts)           | Contains R based scripts used throughout the analysis, also referenced in respective `.Rmd`.                                                                                                                  |
+| [scripts](scripts)               | Contains analysis scripts.                                                                                                                                                                                    |
 
 ## Reproducibility
 

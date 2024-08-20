@@ -34,7 +34,7 @@ Within this repository you will find:
 
 | Directory | Description |
 | --------- | --------------------------------------------------------------------------- |
-| [docs](docs) | Contains all `.Rmd`s and their corresponding `.html`s describing analyses performed for this project. These can be view interactively at: [link](#TODO)|
+| [docs](docs) | Contains all `.Rmd`s and their corresponding `.html`s describing analyses performed for this project. These can be view interactively at: [https://aaronwagen.github.io/peripheral_immune_neurodegeneration/](https://aaronwagen.github.io/peripheral_immune_neurodegeneration/)|
 | [logs](logs) | For any scripts that were run outside of an `.Rmd` (e.g. scripts from the [scripts](scripts) directory), a log file was recorded and can be accessed here. |
 | [raw_data](raw_data) | External tables and genomic datasets used in analyses (not linked to github due to size, see published article for sources). |
 | [processed_data](processed_data) | Results output from colocalisation analysis pipelines (not linked to github due to size). |
