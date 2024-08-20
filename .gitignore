@@ -1,0 +1,14 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+.Rbuildignore
+.Renviron
+.Rprofile
+Description
+TODO.md
+logs/aquino_*
+logs/ota_shigemizu_logs
+raw_data
+processed_data
+figures

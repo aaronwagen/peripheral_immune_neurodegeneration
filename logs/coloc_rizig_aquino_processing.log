@@ -1,0 +1,722 @@
+here() starts at /nemo/lab/gandhis/home/users/wagena/SNCA
+── Attaching packages ─────────────────────────────────────── tidyverse 1.3.2 ──
+✔ ggplot2 3.4.2      ✔ purrr   0.3.5 
+✔ tibble  3.1.8      ✔ dplyr   1.0.10
+✔ tidyr   1.2.1      ✔ stringr 1.4.1 
+✔ readr   2.1.2      ✔ forcats 0.5.2 
+── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
+✖ dplyr::filter() masks stats::filter()
+✖ dplyr::lag()    masks stats::lag()
+This is a new update to coloc.
+
+Attaching package: ‘data.table’
+
+The following objects are masked from ‘package:dplyr’:
+
+    between, first, last
+
+The following object is masked from ‘package:purrr’:
+
+    transpose
+
+Loading required package: BiocGenerics
+
+Attaching package: ‘BiocGenerics’
+
+The following objects are masked from ‘package:dplyr’:
+
+    combine, intersect, setdiff, union
+
+The following objects are masked from ‘package:stats’:
+
+    IQR, mad, sd, var, xtabs
+
+The following objects are masked from ‘package:base’:
+
+    anyDuplicated, append, as.data.frame, basename, cbind, colnames,
+    dirname, do.call, duplicated, eval, evalq, Filter, Find, get, grep,
+    grepl, intersect, is.unsorted, lapply, Map, mapply, match, mget,
+    order, paste, pmax, pmax.int, pmin, pmin.int, Position, rank,
+    rbind, Reduce, rownames, sapply, setdiff, sort, table, tapply,
+    union, unique, unsplit, which.max, which.min
+
+Loading required package: IRanges
+Loading required package: S4Vectors
+Loading required package: stats4
+
+Attaching package: ‘S4Vectors’
+
+The following objects are masked from ‘package:data.table’:
+
+    first, second
+
+The following objects are masked from ‘package:dplyr’:
+
+    first, rename
+
+The following object is masked from ‘package:tidyr’:
+
+    expand
+
+The following objects are masked from ‘package:base’:
+
+    expand.grid, I, unname
+
+
+Attaching package: ‘IRanges’
+
+The following object is masked from ‘package:data.table’:
+
+    shift
+
+The following objects are masked from ‘package:dplyr’:
+
+    collapse, desc, slice
+
+The following object is masked from ‘package:purrr’:
+
+    reduce
+
+Loading required package: GenomicRanges
+Loading required package: GenomeInfoDb
+
+Attaching package: ‘plyranges’
+
+The following object is masked from ‘package:IRanges’:
+
+    slice
+
+The following object is masked from ‘package:data.table’:
+
+    between
+
+The following objects are masked from ‘package:dplyr’:
+
+    between, n, n_distinct
+
+The following object is masked from ‘package:stats’:
+
+    filter
+
+As of tidytable v0.9.0 dotless versions of functions are exported.
+You can now use `arrange()`/`mutate()`/etc. directly.
+Warning: tidytable was loaded after dplyr.
+This can lead to most dplyr functions being overwritten by tidytable functions.
+Warning: tidytable was loaded after tidyr.
+This can lead to most tidyr functions being overwritten by tidytable functions.
+
+Attaching package: ‘tidytable’
+
+The following objects are masked from ‘package:plyranges’:
+
+    arrange, between, filter, group_by, group_vars, mutate, n,
+    n_distinct, select, slice, summarise, summarize, ungroup
+
+The following objects are masked from ‘package:IRanges’:
+
+    desc, slice
+
+The following objects are masked from ‘package:S4Vectors’:
+
+    %in%, expand, first, rename
+
+The following object is masked from ‘package:BiocGenerics’:
+
+    %in%
+
+The following objects are masked from ‘package:data.table’:
+
+    between, first, fread, last
+
+The following objects are masked from ‘package:dplyr’:
+
+    across, add_count, add_tally, anti_join, arrange, between,
+    bind_cols, bind_rows, c_across, case_when, coalesce, count,
+    cume_dist, cur_column, cur_data, cur_group_id, cur_group_rows,
+    dense_rank, desc, distinct, filter, first, full_join, group_by,
+    group_split, group_vars, if_all, if_any, if_else, inner_join,
+    is_grouped_df, lag, last, lead, left_join, min_rank, mutate, n,
+    n_distinct, na_if, nest_by, nest_join, nth, percent_rank, pull,
+    recode, relocate, rename, rename_with, right_join, row_number,
+    rowwise, select, semi_join, slice, slice_head, slice_max,
+    slice_min, slice_sample, slice_tail, summarise, summarize, tally,
+    top_n, transmute, ungroup
+
+The following objects are masked from ‘package:purrr’:
+
+    map, map_chr, map_dbl, map_df, map_dfc, map_dfr, map_int, map_lgl,
+    map2, map2_chr, map2_dbl, map2_df, map2_dfc, map2_dfr, map2_int,
+    map2_lgl, pmap, pmap_chr, pmap_dbl, pmap_df, pmap_dfc, pmap_dfr,
+    pmap_int, pmap_lgl, walk
+
+The following objects are masked from ‘package:tidyr’:
+
+    complete, crossing, drop_na, expand, expand_grid, extract, fill,
+    nest, nesting, pivot_longer, pivot_wider, replace_na, separate,
+    separate_rows, uncount, unite, unnest, unnest_longer, unnest_wider
+
+The following object is masked from ‘package:tibble’:
+
+    enframe
+
+The following objects are masked from ‘package:stats’:
+
+    dt, filter, lag
+
+The following object is masked from ‘package:base’:
+
+    %in%
+
+
+Attaching package: ‘qdapTools’
+
+The following objects are masked from ‘package:plyranges’:
+
+    shift_left, shift_right
+
+The following object is masked from ‘package:GenomicRanges’:
+
+    shift
+
+The following object is masked from ‘package:IRanges’:
+
+    shift
+
+The following object is masked from ‘package:data.table’:
+
+    shift
+
+The following object is masked from ‘package:dplyr’:
+
+    id
+
+Loading required package: viridisLite
+here() starts at /nemo/lab/gandhis/home/users/wagena/SNCA
+[1] "expression_celltype_B-cell_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_celltype_B-cell_COV/liberal"
+[1] "expression_celltype_B-cell_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_celltype_B-cell_IAV/liberal"
+[1] "expression_celltype_B-cell_NS"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_celltype_B-cell_NS/liberal"
+[1] "expression_celltype_Monocyte_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_celltype_Monocyte_COV/liberal"
+[1] "expression_celltype_Monocyte_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_celltype_Monocyte_IAV/liberal"
+[1] "expression_celltype_Monocyte_NS"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_celltype_Monocyte_NS/liberal"
+[1] "expression_celltype_NK_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_celltype_NK_COV/liberal"
+[1] "expression_celltype_NK_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_celltype_NK_IAV/liberal"
+[1] "expression_celltype_NK_NS"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_celltype_NK_NS/liberal"
+[1] "expression_celltype_T-CD4_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_celltype_T-CD4_COV/liberal"
+[1] "expression_celltype_T-CD4_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_celltype_T-CD4_IAV/liberal"
+[1] "expression_celltype_T-CD4_NS"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_celltype_T-CD4_NS/liberal"
+[1] "expression_celltype_T-CD8_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_celltype_T-CD8_COV/liberal"
+[1] "expression_celltype_T-CD8_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_celltype_T-CD8_IAV/liberal"
+[1] "expression_celltype_T-CD8_NS"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_celltype_T-CD8_NS/liberal"
+[1] "expression_subtype_B-memory-k_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_B-memory-k_COV/liberal"
+[1] "expression_subtype_B-memory-k_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_B-memory-k_IAV/liberal"
+[1] "expression_subtype_B-memory-k_NS"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_B-memory-k_NS/liberal"
+[1] "expression_subtype_B-memory-l_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_B-memory-l_COV/liberal"
+[1] "expression_subtype_B-memory-l_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_B-memory-l_IAV/liberal"
+[1] "expression_subtype_B-memory-l_NS"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_B-memory-l_NS/liberal"
+[1] "expression_subtype_B-naive-k_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_B-naive-k_COV/liberal"
+[1] "expression_subtype_B-naive-k_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_B-naive-k_IAV/liberal"
+[1] "expression_subtype_B-naive-k_NS"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_B-naive-k_NS/liberal"
+[1] "expression_subtype_B-naive-l_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_B-naive-l_COV/liberal"
+[1] "expression_subtype_B-naive-l_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_B-naive-l_IAV/liberal"
+[1] "expression_subtype_B-naive-l_NS"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_B-naive-l_NS/liberal"
+[1] "expression_subtype_Dendritic-classic_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_Dendritic-classic_COV/liberal"
+[1] "expression_subtype_Dendritic-classic_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_Dendritic-classic_IAV/liberal"
+[1] "expression_subtype_Dendritic-classic_NS"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_Dendritic-classic_NS/liberal"
+[1] "expression_subtype_Dendritic-plasmacytoid_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_Dendritic-plasmacytoid_COV/liberal"
+[1] "expression_subtype_Dendritic-plasmacytoid_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_Dendritic-plasmacytoid_IAV/liberal"
+[1] "expression_subtype_Dendritic-plasmacytoid_NS"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_Dendritic-plasmacytoid_NS/liberal"
+[1] "expression_subtype_Mono-cd14_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_Mono-cd14_COV/liberal"
+[1] "expression_subtype_Mono-cd14_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_Mono-cd14_IAV/liberal"
+[1] "expression_subtype_Mono-cd14_NS"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_Mono-cd14_NS/liberal"
+[1] "expression_subtype_Mono-cd14-infected_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_Mono-cd14-infected_IAV/liberal"
+[1] "expression_subtype_Mono-cd16_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_Mono-cd16_COV/liberal"
+[1] "expression_subtype_Mono-cd16_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_Mono-cd16_IAV/liberal"
+[1] "expression_subtype_Mono-cd16_NS"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_Mono-cd16_NS/liberal"
+[1] "expression_subtype_NK-CD56-bright_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_NK-CD56-bright_COV/liberal"
+[1] "expression_subtype_NK-CD56-bright_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_NK-CD56-bright_IAV/liberal"
+[1] "expression_subtype_NK-CD56-bright_NS"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_NK-CD56-bright_NS/liberal"
+[1] "expression_subtype_NK-CD56-dim_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_NK-CD56-dim_COV/liberal"
+[1] "expression_subtype_NK-CD56-dim_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_NK-CD56-dim_IAV/liberal"
+[1] "expression_subtype_NK-CD56-dim_NS"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_NK-CD56-dim_NS/liberal"
+[1] "expression_subtype_NK-innate_lymphoid_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_NK-innate_lymphoid_COV/liberal"
+[1] "expression_subtype_NK-innate_lymphoid_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_NK-innate_lymphoid_IAV/liberal"
+[1] "expression_subtype_NK-innate_lymphoid_NS"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_NK-innate_lymphoid_NS/liberal"
+[1] "expression_subtype_NK-memory-like_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_NK-memory-like_COV/liberal"
+[1] "expression_subtype_NK-memory-like_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_NK-memory-like_IAV/liberal"
+[1] "expression_subtype_NK-memory-like_NS"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_NK-memory-like_NS/liberal"
+[1] "expression_subtype_Plasmablast_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_Plasmablast_COV/liberal"
+[1] "expression_subtype_Plasmablast_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_Plasmablast_IAV/liberal"
+[1] "expression_subtype_Plasmablast_NS"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_Plasmablast_NS/liberal"
+[1] "expression_subtype_T-CD4-effector_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_T-CD4-effector_COV/liberal"
+[1] "expression_subtype_T-CD4-effector_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_T-CD4-effector_IAV/liberal"
+[1] "expression_subtype_T-CD4-effector_NS"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_T-CD4-effector_NS/liberal"
+[1] "expression_subtype_T-CD4-naive_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_T-CD4-naive_COV/liberal"
+[1] "expression_subtype_T-CD4-naive_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_T-CD4-naive_IAV/liberal"
+[1] "expression_subtype_T-CD4-naive_NS"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_T-CD4-naive_NS/liberal"
+[1] "expression_subtype_T-CD8-central-effector-mem_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_T-CD8-central-effector-mem_COV/liberal"
+[1] "expression_subtype_T-CD8-central-effector-mem_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_T-CD8-central-effector-mem_IAV/liberal"
+[1] "expression_subtype_T-CD8-central-effector-mem_NS"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_T-CD8-central-effector-mem_NS/liberal"
+[1] "expression_subtype_T-CD8-effector-mem-reexpress-cd45RA_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_T-CD8-effector-mem-reexpress-cd45RA_COV/liberal"
+[1] "expression_subtype_T-CD8-effector-mem-reexpress-cd45RA_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_T-CD8-effector-mem-reexpress-cd45RA_IAV/liberal"
+[1] "expression_subtype_T-CD8-effector-mem-reexpress-cd45RA_NS"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_T-CD8-effector-mem-reexpress-cd45RA_NS/liberal"
+[1] "expression_subtype_T-CD8-naive_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_T-CD8-naive_COV/liberal"
+[1] "expression_subtype_T-CD8-naive_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_T-CD8-naive_IAV/liberal"
+[1] "expression_subtype_T-CD8-naive_NS"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_T-CD8-naive_NS/liberal"
+[1] "expression_subtype_T-gammadelta_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_T-gammadelta_COV/liberal"
+[1] "expression_subtype_T-gammadelta_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_T-gammadelta_IAV/liberal"
+[1] "expression_subtype_T-gammadelta_NS"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_T-gammadelta_NS/liberal"
+[1] "expression_subtype_T-mucosal-assoc-invariant_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_T-mucosal-assoc-invariant_COV/liberal"
+[1] "expression_subtype_T-mucosal-assoc-invariant_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_T-mucosal-assoc-invariant_IAV/liberal"
+[1] "expression_subtype_T-mucosal-assoc-invariant_NS"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_T-mucosal-assoc-invariant_NS/liberal"
+[1] "expression_subtype_T-reg_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_T-reg_COV/liberal"
+[1] "expression_subtype_T-reg_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_T-reg_IAV/liberal"
+[1] "expression_subtype_T-reg_NS"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_T-reg_NS/liberal"
+[1] "response_celltype_B-cell_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_celltype_B-cell_COV/liberal"
+[1] "response_celltype_B-cell_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_celltype_B-cell_IAV/liberal"
+[1] "response_celltype_Monocyte_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_celltype_Monocyte_COV/liberal"
+[1] "response_celltype_Monocyte_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_celltype_Monocyte_IAV/liberal"
+[1] "response_celltype_NK_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_celltype_NK_COV/liberal"
+[1] "response_celltype_NK_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_celltype_NK_IAV/liberal"
+[1] "response_celltype_T-CD4_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_celltype_T-CD4_COV/liberal"
+[1] "response_celltype_T-CD4_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_celltype_T-CD4_IAV/liberal"
+[1] "response_celltype_T-CD8_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_celltype_T-CD8_COV/liberal"
+[1] "response_celltype_T-CD8_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_celltype_T-CD8_IAV/liberal"
+[1] "response_subtype_B-memory-k_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_subtype_B-memory-k_COV/liberal"
+[1] "response_subtype_B-memory-k_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_subtype_B-memory-k_IAV/liberal"
+[1] "response_subtype_B-memory-l_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_subtype_B-memory-l_COV/liberal"
+[1] "response_subtype_B-memory-l_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_subtype_B-memory-l_IAV/liberal"
+[1] "response_subtype_B-naive-k_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_subtype_B-naive-k_COV/liberal"
+[1] "response_subtype_B-naive-k_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_subtype_B-naive-k_IAV/liberal"
+[1] "response_subtype_B-naive-l_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_subtype_B-naive-l_COV/liberal"
+[1] "response_subtype_B-naive-l_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_subtype_B-naive-l_IAV/liberal"
+[1] "response_subtype_Dendritic-classic_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_subtype_Dendritic-classic_COV/liberal"
+[1] "response_subtype_Dendritic-classic_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_subtype_Dendritic-classic_IAV/liberal"
+[1] "response_subtype_Dendritic-plasmacytoid_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_subtype_Dendritic-plasmacytoid_COV/liberal"
+[1] "response_subtype_Dendritic-plasmacytoid_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_subtype_Dendritic-plasmacytoid_IAV/liberal"
+[1] "response_subtype_Mono-cd14_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_subtype_Mono-cd14_COV/liberal"
+[1] "response_subtype_Mono-cd14_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_subtype_Mono-cd14_IAV/liberal"
+[1] "response_subtype_Mono-cd14-infected_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_subtype_Mono-cd14-infected_IAV/liberal"
+[1] "response_subtype_Mono-cd16_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_subtype_Mono-cd16_COV/liberal"
+[1] "response_subtype_Mono-cd16_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_subtype_Mono-cd16_IAV/liberal"
+[1] "response_subtype_NK-CD56-bright_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_subtype_NK-CD56-bright_COV/liberal"
+[1] "response_subtype_NK-CD56-bright_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_subtype_NK-CD56-bright_IAV/liberal"
+[1] "response_subtype_NK-CD56-dim_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_subtype_NK-CD56-dim_COV/liberal"
+[1] "response_subtype_NK-CD56-dim_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_subtype_NK-CD56-dim_IAV/liberal"
+[1] "response_subtype_NK-innate_lymphoid_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_subtype_NK-innate_lymphoid_COV/liberal"
+[1] "response_subtype_NK-innate_lymphoid_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_subtype_NK-innate_lymphoid_IAV/liberal"
+[1] "response_subtype_NK-memory-like_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_subtype_NK-memory-like_COV/liberal"
+[1] "response_subtype_NK-memory-like_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_subtype_NK-memory-like_IAV/liberal"
+[1] "response_subtype_Plasmablast_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_subtype_Plasmablast_COV/liberal"
+[1] "response_subtype_Plasmablast_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_subtype_Plasmablast_IAV/liberal"
+[1] "response_subtype_T-CD4-effector_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_subtype_T-CD4-effector_COV/liberal"
+[1] "response_subtype_T-CD4-effector_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_subtype_T-CD4-effector_IAV/liberal"
+[1] "response_subtype_T-CD4-naive_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_subtype_T-CD4-naive_COV/liberal"
+[1] "response_subtype_T-CD4-naive_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_subtype_T-CD4-naive_IAV/liberal"
+[1] "response_subtype_T-CD8-central-effector-mem_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_subtype_T-CD8-central-effector-mem_COV/liberal"
+[1] "response_subtype_T-CD8-central-effector-mem_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_subtype_T-CD8-central-effector-mem_IAV/liberal"
+[1] "response_subtype_T-CD8-effector-mem-reexpress-cd45RA_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_subtype_T-CD8-effector-mem-reexpress-cd45RA_COV/liberal"
+[1] "response_subtype_T-CD8-effector-mem-reexpress-cd45RA_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_subtype_T-CD8-effector-mem-reexpress-cd45RA_IAV/liberal"
+[1] "response_subtype_T-CD8-naive_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_subtype_T-CD8-naive_COV/liberal"
+[1] "response_subtype_T-CD8-naive_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_subtype_T-CD8-naive_IAV/liberal"
+[1] "response_subtype_T-gammadelta_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_subtype_T-gammadelta_COV/liberal"
+[1] "response_subtype_T-gammadelta_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_subtype_T-gammadelta_IAV/liberal"
+[1] "response_subtype_T-mucosal-assoc-invariant_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_subtype_T-mucosal-assoc-invariant_COV/liberal"
+[1] "response_subtype_T-mucosal-assoc-invariant_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_subtype_T-mucosal-assoc-invariant_IAV/liberal"
+[1] "response_subtype_T-reg_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_subtype_T-reg_COV/liberal"
+[1] "response_subtype_T-reg_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_subtype_T-reg_IAV/liberal"
+[1] "expression_celltype_B-cell_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_celltype_B-cell_COV/robust"
+[1] "expression_celltype_B-cell_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_celltype_B-cell_IAV/robust"
+[1] "expression_celltype_B-cell_NS"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_celltype_B-cell_NS/robust"
+[1] "expression_celltype_Monocyte_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_celltype_Monocyte_COV/robust"
+[1] "expression_celltype_Monocyte_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_celltype_Monocyte_IAV/robust"
+[1] "expression_celltype_Monocyte_NS"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_celltype_Monocyte_NS/robust"
+[1] "expression_celltype_NK_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_celltype_NK_COV/robust"
+[1] "expression_celltype_NK_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_celltype_NK_IAV/robust"
+[1] "expression_celltype_NK_NS"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_celltype_NK_NS/robust"
+[1] "expression_celltype_T-CD4_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_celltype_T-CD4_COV/robust"
+[1] "expression_celltype_T-CD4_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_celltype_T-CD4_IAV/robust"
+[1] "expression_celltype_T-CD4_NS"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_celltype_T-CD4_NS/robust"
+[1] "expression_celltype_T-CD8_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_celltype_T-CD8_COV/robust"
+[1] "expression_celltype_T-CD8_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_celltype_T-CD8_IAV/robust"
+[1] "expression_celltype_T-CD8_NS"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_celltype_T-CD8_NS/robust"
+[1] "expression_subtype_B-memory-k_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_B-memory-k_COV/robust"
+[1] "expression_subtype_B-memory-k_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_B-memory-k_IAV/robust"
+[1] "expression_subtype_B-memory-k_NS"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_B-memory-k_NS/robust"
+[1] "expression_subtype_B-memory-l_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_B-memory-l_COV/robust"
+[1] "expression_subtype_B-memory-l_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_B-memory-l_IAV/robust"
+[1] "expression_subtype_B-memory-l_NS"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_B-memory-l_NS/robust"
+[1] "expression_subtype_B-naive-k_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_B-naive-k_COV/robust"
+[1] "expression_subtype_B-naive-k_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_B-naive-k_IAV/robust"
+[1] "expression_subtype_B-naive-k_NS"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_B-naive-k_NS/robust"
+[1] "expression_subtype_B-naive-l_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_B-naive-l_COV/robust"
+[1] "expression_subtype_B-naive-l_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_B-naive-l_IAV/robust"
+[1] "expression_subtype_B-naive-l_NS"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_B-naive-l_NS/robust"
+[1] "expression_subtype_Dendritic-classic_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_Dendritic-classic_COV/robust"
+[1] "expression_subtype_Dendritic-classic_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_Dendritic-classic_IAV/robust"
+[1] "expression_subtype_Dendritic-classic_NS"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_Dendritic-classic_NS/robust"
+[1] "expression_subtype_Dendritic-plasmacytoid_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_Dendritic-plasmacytoid_COV/robust"
+[1] "expression_subtype_Dendritic-plasmacytoid_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_Dendritic-plasmacytoid_IAV/robust"
+[1] "expression_subtype_Dendritic-plasmacytoid_NS"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_Dendritic-plasmacytoid_NS/robust"
+[1] "expression_subtype_Mono-cd14_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_Mono-cd14_COV/robust"
+[1] "expression_subtype_Mono-cd14_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_Mono-cd14_IAV/robust"
+[1] "expression_subtype_Mono-cd14_NS"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_Mono-cd14_NS/robust"
+[1] "expression_subtype_Mono-cd14-infected_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_Mono-cd14-infected_IAV/robust"
+[1] "expression_subtype_Mono-cd16_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_Mono-cd16_COV/robust"
+[1] "expression_subtype_Mono-cd16_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_Mono-cd16_IAV/robust"
+[1] "expression_subtype_Mono-cd16_NS"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_Mono-cd16_NS/robust"
+[1] "expression_subtype_NK-CD56-bright_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_NK-CD56-bright_COV/robust"
+[1] "expression_subtype_NK-CD56-bright_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_NK-CD56-bright_IAV/robust"
+[1] "expression_subtype_NK-CD56-bright_NS"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_NK-CD56-bright_NS/robust"
+[1] "expression_subtype_NK-CD56-dim_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_NK-CD56-dim_COV/robust"
+[1] "expression_subtype_NK-CD56-dim_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_NK-CD56-dim_IAV/robust"
+[1] "expression_subtype_NK-CD56-dim_NS"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_NK-CD56-dim_NS/robust"
+[1] "expression_subtype_NK-innate_lymphoid_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_NK-innate_lymphoid_COV/robust"
+[1] "expression_subtype_NK-innate_lymphoid_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_NK-innate_lymphoid_IAV/robust"
+[1] "expression_subtype_NK-innate_lymphoid_NS"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_NK-innate_lymphoid_NS/robust"
+[1] "expression_subtype_NK-memory-like_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_NK-memory-like_COV/robust"
+[1] "expression_subtype_NK-memory-like_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_NK-memory-like_IAV/robust"
+[1] "expression_subtype_NK-memory-like_NS"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_NK-memory-like_NS/robust"
+[1] "expression_subtype_Plasmablast_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_Plasmablast_COV/robust"
+[1] "expression_subtype_Plasmablast_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_Plasmablast_IAV/robust"
+[1] "expression_subtype_Plasmablast_NS"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_Plasmablast_NS/robust"
+[1] "expression_subtype_T-CD4-effector_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_T-CD4-effector_COV/robust"
+[1] "expression_subtype_T-CD4-effector_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_T-CD4-effector_IAV/robust"
+[1] "expression_subtype_T-CD4-effector_NS"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_T-CD4-effector_NS/robust"
+[1] "expression_subtype_T-CD4-naive_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_T-CD4-naive_COV/robust"
+[1] "expression_subtype_T-CD4-naive_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_T-CD4-naive_IAV/robust"
+[1] "expression_subtype_T-CD4-naive_NS"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_T-CD4-naive_NS/robust"
+[1] "expression_subtype_T-CD8-central-effector-mem_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_T-CD8-central-effector-mem_COV/robust"
+[1] "expression_subtype_T-CD8-central-effector-mem_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_T-CD8-central-effector-mem_IAV/robust"
+[1] "expression_subtype_T-CD8-central-effector-mem_NS"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_T-CD8-central-effector-mem_NS/robust"
+[1] "expression_subtype_T-CD8-effector-mem-reexpress-cd45RA_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_T-CD8-effector-mem-reexpress-cd45RA_COV/robust"
+[1] "expression_subtype_T-CD8-effector-mem-reexpress-cd45RA_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_T-CD8-effector-mem-reexpress-cd45RA_IAV/robust"
+[1] "expression_subtype_T-CD8-effector-mem-reexpress-cd45RA_NS"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_T-CD8-effector-mem-reexpress-cd45RA_NS/robust"
+[1] "expression_subtype_T-CD8-naive_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_T-CD8-naive_COV/robust"
+[1] "expression_subtype_T-CD8-naive_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_T-CD8-naive_IAV/robust"
+[1] "expression_subtype_T-CD8-naive_NS"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_T-CD8-naive_NS/robust"
+[1] "expression_subtype_T-gammadelta_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_T-gammadelta_COV/robust"
+[1] "expression_subtype_T-gammadelta_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_T-gammadelta_IAV/robust"
+[1] "expression_subtype_T-gammadelta_NS"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_T-gammadelta_NS/robust"
+[1] "expression_subtype_T-mucosal-assoc-invariant_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_T-mucosal-assoc-invariant_COV/robust"
+[1] "expression_subtype_T-mucosal-assoc-invariant_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_T-mucosal-assoc-invariant_IAV/robust"
+[1] "expression_subtype_T-mucosal-assoc-invariant_NS"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_T-mucosal-assoc-invariant_NS/robust"
+[1] "expression_subtype_T-reg_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_T-reg_COV/robust"
+[1] "expression_subtype_T-reg_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_T-reg_IAV/robust"
+[1] "expression_subtype_T-reg_NS"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/expression_subtype_T-reg_NS/robust"
+[1] "response_celltype_B-cell_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_celltype_B-cell_COV/robust"
+[1] "response_celltype_B-cell_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_celltype_B-cell_IAV/robust"
+[1] "response_celltype_Monocyte_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_celltype_Monocyte_COV/robust"
+[1] "response_celltype_Monocyte_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_celltype_Monocyte_IAV/robust"
+[1] "response_celltype_NK_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_celltype_NK_COV/robust"
+[1] "response_celltype_NK_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_celltype_NK_IAV/robust"
+[1] "response_celltype_T-CD4_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_celltype_T-CD4_COV/robust"
+[1] "response_celltype_T-CD4_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_celltype_T-CD4_IAV/robust"
+[1] "response_celltype_T-CD8_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_celltype_T-CD8_COV/robust"
+[1] "response_celltype_T-CD8_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_celltype_T-CD8_IAV/robust"
+[1] "response_subtype_B-memory-k_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_subtype_B-memory-k_COV/robust"
+[1] "response_subtype_B-memory-k_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_subtype_B-memory-k_IAV/robust"
+[1] "response_subtype_B-memory-l_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_subtype_B-memory-l_COV/robust"
+[1] "response_subtype_B-memory-l_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_subtype_B-memory-l_IAV/robust"
+[1] "response_subtype_B-naive-k_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_subtype_B-naive-k_COV/robust"
+[1] "response_subtype_B-naive-k_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_subtype_B-naive-k_IAV/robust"
+[1] "response_subtype_B-naive-l_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_subtype_B-naive-l_COV/robust"
+[1] "response_subtype_B-naive-l_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_subtype_B-naive-l_IAV/robust"
+[1] "response_subtype_Dendritic-classic_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_subtype_Dendritic-classic_COV/robust"
+[1] "response_subtype_Dendritic-classic_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_subtype_Dendritic-classic_IAV/robust"
+[1] "response_subtype_Dendritic-plasmacytoid_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_subtype_Dendritic-plasmacytoid_COV/robust"
+[1] "response_subtype_Dendritic-plasmacytoid_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_subtype_Dendritic-plasmacytoid_IAV/robust"
+[1] "response_subtype_Mono-cd14_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_subtype_Mono-cd14_COV/robust"
+[1] "response_subtype_Mono-cd14_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_subtype_Mono-cd14_IAV/robust"
+[1] "response_subtype_Mono-cd14-infected_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_subtype_Mono-cd14-infected_IAV/robust"
+[1] "response_subtype_Mono-cd16_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_subtype_Mono-cd16_COV/robust"
+[1] "response_subtype_Mono-cd16_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_subtype_Mono-cd16_IAV/robust"
+[1] "response_subtype_NK-CD56-bright_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_subtype_NK-CD56-bright_COV/robust"
+[1] "response_subtype_NK-CD56-bright_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_subtype_NK-CD56-bright_IAV/robust"
+[1] "response_subtype_NK-CD56-dim_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_subtype_NK-CD56-dim_COV/robust"
+[1] "response_subtype_NK-CD56-dim_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_subtype_NK-CD56-dim_IAV/robust"
+[1] "response_subtype_NK-innate_lymphoid_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_subtype_NK-innate_lymphoid_COV/robust"
+[1] "response_subtype_NK-innate_lymphoid_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_subtype_NK-innate_lymphoid_IAV/robust"
+[1] "response_subtype_NK-memory-like_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_subtype_NK-memory-like_COV/robust"
+[1] "response_subtype_NK-memory-like_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_subtype_NK-memory-like_IAV/robust"
+[1] "response_subtype_Plasmablast_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_subtype_Plasmablast_COV/robust"
+[1] "response_subtype_Plasmablast_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_subtype_Plasmablast_IAV/robust"
+[1] "response_subtype_T-CD4-effector_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_subtype_T-CD4-effector_COV/robust"
+[1] "response_subtype_T-CD4-effector_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_subtype_T-CD4-effector_IAV/robust"
+[1] "response_subtype_T-CD4-naive_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_subtype_T-CD4-naive_COV/robust"
+[1] "response_subtype_T-CD4-naive_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_subtype_T-CD4-naive_IAV/robust"
+[1] "response_subtype_T-CD8-central-effector-mem_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_subtype_T-CD8-central-effector-mem_COV/robust"
+[1] "response_subtype_T-CD8-central-effector-mem_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_subtype_T-CD8-central-effector-mem_IAV/robust"
+[1] "response_subtype_T-CD8-effector-mem-reexpress-cd45RA_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_subtype_T-CD8-effector-mem-reexpress-cd45RA_COV/robust"
+[1] "response_subtype_T-CD8-effector-mem-reexpress-cd45RA_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_subtype_T-CD8-effector-mem-reexpress-cd45RA_IAV/robust"
+[1] "response_subtype_T-CD8-naive_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_subtype_T-CD8-naive_COV/robust"
+[1] "response_subtype_T-CD8-naive_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_subtype_T-CD8-naive_IAV/robust"
+[1] "response_subtype_T-gammadelta_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_subtype_T-gammadelta_COV/robust"
+[1] "response_subtype_T-gammadelta_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_subtype_T-gammadelta_IAV/robust"
+[1] "response_subtype_T-mucosal-assoc-invariant_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_subtype_T-mucosal-assoc-invariant_COV/robust"
+[1] "response_subtype_T-mucosal-assoc-invariant_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_subtype_T-mucosal-assoc-invariant_IAV/robust"
+[1] "response_subtype_T-reg_COV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_subtype_T-reg_COV/robust"
+[1] "response_subtype_T-reg_IAV"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/rizig_aquino/coloc/response_subtype_T-reg_IAV/robust"

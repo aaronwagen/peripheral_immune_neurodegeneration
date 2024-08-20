@@ -1,0 +1,11 @@
+Package: peripheral_immune_neurodegen
+Type: Project
+Version: 0.99.0
+Imports:
+    here,
+    ggplot2,
+    knitr,
+    tidyverse,
+    rmarkdown
+Encoding: UTF-8
+License: MIT + file LICENSE

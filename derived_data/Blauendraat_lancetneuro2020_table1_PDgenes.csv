@@ -1,0 +1,22 @@
+﻿Empty Cell,Mutation,Note,Year_of_discovery,Proposed_disease_mechanism,Inheritance,Frequency,Nominated_by_GWAS,Multiple_independent_families_reported*,Functional_evidence†,Negative reports published‡,Confidence_as_actual_PD_gene
+SNCA,Missense or multiplication,Often with dementia,"1997, 2003",Gain of function or overexpression,Dominant,Very rare,Yes,++,++,+,Very high
+PRKN,Missense or loss of function,Often early onset,1998,Loss of function,Recessive,Rare,No,++,++,+,Very high
+UCHL1,Missense,..,1998,Loss of function?,Dominant,Unclear,No,−,+,− –,Low
+PARK7,Missense,Often early onset,2003,Loss of function,Recessive,Very rare,No,++,++,+,Very high
+LRRK2,Missense,..,2004,Gain of function,Dominant,Common,Yes,++,++,+,Very high
+PINK1,Missense or loss of function,Often early onset,2004,Loss of function,Recessive,Rare,No,++,++,+,Very high
+POLG,Missense or loss of function,Atypical PD,2004,Loss of function?,Dominant,Rare,No,++,+,+,High
+HTRA2,Missense,..,2005,Unclear,Dominant,Unclear,No,−,+,− –,Low
+ATP13A2,Missense or loss of function,Atypical PD,2006,Loss of function,Recessive,Very rare,No,++,++,+,Very high
+FBXO7,Missense,Often early onset,2008,Loss of function,Recessive,Very rare,No,++,++,+,Very high
+GIGYF2,Missense,..,2008,Unclear,Dominant,Unclear,No,+,+,− –,Low
+GBA,Missense or loss of function,..,2009,Likely loss of function,Dominant (incomplete penetrance),Common,Yes,++,++,+,Very high
+PLA2G6,Missense or loss of function,Often early onset,2009,Loss of function,Recessive,Rare,No,++,++,+,Very high
+EIF4G1,Missense,..,2011,Unclear,Dominant,Unclear,No,−,+,− –,Low
+VPS35,Missense,..,2011,Loss of function,Dominant,Very rare,No,++,+,+,Very high
+DNAJC6,Missense or loss of function,Often early onset,2012,Loss of function,Recessive,Very rare,No,++,+,+,High
+SYNJ1,Missense or loss of function,Often atypical PD,2013,Loss of function,Recessive,Very rare,No,++,+,+,High
+DNAJC13,Missense,Same family as TMEM230,2014,Unclear,Dominant,Unclear,No,+,+,−,Low
+TMEM230,Missense,Same family as DNAJC13,2016,Loss of function?,Dominant,Unclear,No,−,+,−,Low
+VPS13C,Missense or loss of function,..,2016,Loss of function,Recessive,Rare,Yes,++,+,+,High
+LRP10,Missense or loss of function,..,2018,Loss of function?,Dominant,Unclear,No,,,,

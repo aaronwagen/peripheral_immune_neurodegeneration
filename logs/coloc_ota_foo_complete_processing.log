@@ -1,0 +1,351 @@
+Warning messages:
+1: In file(con, "r") :
+  URL 'https://bioconductor.org/config.yaml': status was 'Problem with the SSL CA cert (path? access rights?)'
+2: In file(con, "r") :
+  URL 'https://bioconductor.org/config.yaml': status was 'Problem with the SSL CA cert (path? access rights?)'
+3: This project is configured to use Bioconductor '3.16', which is not compatible with R '4.2.0'.
+Use 'renv::init(bioconductor = TRUE)' to re-initialize this project with the latest Bioconductor release. 
+here() starts at /nemo/lab/gandhis/home/users/wagena/SNCA
+── Attaching packages ─────────────────────────────────────── tidyverse 1.3.2 ──
+✔ ggplot2 3.4.2      ✔ purrr   1.0.1 
+✔ tibble  3.1.7      ✔ dplyr   1.0.10
+✔ tidyr   1.3.1      ✔ stringr 1.4.0 
+✔ readr   2.1.5      ✔ forcats 1.0.0 
+── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
+✖ dplyr::filter() masks stats::filter()
+✖ dplyr::lag()    masks stats::lag()
+This is coloc version 5.2.3
+
+Attaching package: ‘data.table’
+
+The following objects are masked from ‘package:dplyr’:
+
+    between, first, last
+
+The following object is masked from ‘package:purrr’:
+
+    transpose
+
+Loading required package: BiocGenerics
+
+Attaching package: ‘BiocGenerics’
+
+The following objects are masked from ‘package:dplyr’:
+
+    combine, intersect, setdiff, union
+
+The following objects are masked from ‘package:stats’:
+
+    IQR, mad, sd, var, xtabs
+
+The following objects are masked from ‘package:base’:
+
+    anyDuplicated, append, as.data.frame, basename, cbind, colnames,
+    dirname, do.call, duplicated, eval, evalq, Filter, Find, get, grep,
+    grepl, intersect, is.unsorted, lapply, Map, mapply, match, mget,
+    order, paste, pmax, pmax.int, pmin, pmin.int, Position, rank,
+    rbind, Reduce, rownames, sapply, setdiff, sort, table, tapply,
+    union, unique, unsplit, which.max, which.min
+
+Loading required package: IRanges
+Loading required package: S4Vectors
+Loading required package: stats4
+
+Attaching package: ‘S4Vectors’
+
+The following objects are masked from ‘package:data.table’:
+
+    first, second
+
+The following objects are masked from ‘package:dplyr’:
+
+    first, rename
+
+The following object is masked from ‘package:tidyr’:
+
+    expand
+
+The following objects are masked from ‘package:base’:
+
+    expand.grid, I, unname
+
+
+Attaching package: ‘IRanges’
+
+The following object is masked from ‘package:data.table’:
+
+    shift
+
+The following objects are masked from ‘package:dplyr’:
+
+    collapse, desc, slice
+
+The following object is masked from ‘package:purrr’:
+
+    reduce
+
+Loading required package: GenomicRanges
+Loading required package: GenomeInfoDb
+
+Attaching package: ‘plyranges’
+
+The following object is masked from ‘package:IRanges’:
+
+    slice
+
+The following object is masked from ‘package:data.table’:
+
+    between
+
+The following objects are masked from ‘package:dplyr’:
+
+    between, n, n_distinct
+
+The following object is masked from ‘package:stats’:
+
+    filter
+
+Warning: tidytable was loaded after dplyr.
+This can lead to most dplyr functions being overwritten by tidytable functions.
+Warning: tidytable was loaded after tidyr.
+This can lead to most tidyr functions being overwritten by tidytable functions.
+
+Attaching package: ‘tidytable’
+
+The following objects are masked from ‘package:plyranges’:
+
+    arrange, between, filter, group_by, group_vars, mutate, n,
+    n_distinct, select, slice, summarise, summarize, ungroup
+
+The following objects are masked from ‘package:IRanges’:
+
+    desc, slice
+
+The following objects are masked from ‘package:S4Vectors’:
+
+    %in%, expand, first, rename
+
+The following object is masked from ‘package:BiocGenerics’:
+
+    %in%
+
+The following objects are masked from ‘package:data.table’:
+
+    between, first, fread, last
+
+The following objects are masked from ‘package:dplyr’:
+
+    across, add_count, add_tally, anti_join, arrange, between,
+    bind_cols, bind_rows, c_across, case_when, coalesce, count,
+    cume_dist, cur_column, cur_data, cur_group_id, cur_group_rows,
+    dense_rank, desc, distinct, filter, first, full_join, group_by,
+    group_cols, group_split, group_vars, if_all, if_any, if_else,
+    inner_join, is_grouped_df, lag, last, lead, left_join, min_rank,
+    mutate, n, n_distinct, na_if, nest_by, nest_join, nth,
+    percent_rank, pull, recode, relocate, rename, rename_with,
+    right_join, row_number, rowwise, select, semi_join, slice,
+    slice_head, slice_max, slice_min, slice_sample, slice_tail,
+    summarise, summarize, tally, top_n, transmute, tribble, ungroup
+
+The following objects are masked from ‘package:purrr’:
+
+    map, map_chr, map_dbl, map_df, map_dfc, map_dfr, map_int, map_lgl,
+    map_vec, map2, map2_chr, map2_dbl, map2_df, map2_dfc, map2_dfr,
+    map2_int, map2_lgl, map2_vec, pmap, pmap_chr, pmap_dbl, pmap_df,
+    pmap_dfc, pmap_dfr, pmap_int, pmap_lgl, pmap_vec, walk
+
+The following objects are masked from ‘package:tidyr’:
+
+    complete, crossing, drop_na, expand, expand_grid, extract, fill,
+    nest, nesting, pivot_longer, pivot_wider, replace_na, separate,
+    separate_longer_delim, separate_rows, separate_wider_delim,
+    separate_wider_regex, tribble, uncount, unite, unnest,
+    unnest_longer, unnest_wider
+
+The following objects are masked from ‘package:tibble’:
+
+    enframe, tribble
+
+The following objects are masked from ‘package:stats’:
+
+    dt, filter, lag
+
+The following object is masked from ‘package:base’:
+
+    %in%
+
+
+Attaching package: ‘qdapTools’
+
+The following objects are masked from ‘package:plyranges’:
+
+    shift_left, shift_right
+
+The following object is masked from ‘package:GenomicRanges’:
+
+    shift
+
+The following object is masked from ‘package:IRanges’:
+
+    shift
+
+The following object is masked from ‘package:data.table’:
+
+    shift
+
+The following object is masked from ‘package:dplyr’:
+
+    id
+
+Loading required package: viridisLite
+[1] "<style>body {margin: 0;font-family: -apple-system,BlinkMacSystemFont,Arial,\"Times New Roman\", Times;font-weight: 400;line-height: 1.5;color: black!important;text-align: left;background-color: #fff;}.tocify .list-group-item {border-radius: 10px!important;}*, ::after, ::before {-webkit-box-sizing: border-box;box-sizing: border-box;}div {display: block;}.row-fluid{display: -ms-flexbox;display: -webkit-box;display: flex;-ms-flex-wrap: wrap;flex-wrap: wrap;margin-right: -15px;margin-left: -15px;}body > .row-fluid:first-child{margin-top: 100px;}.row-fluid:first-child > div:first-child{background: -o-linear-gradient(left, #fff 50%, #f8f8f8 100%);background: -webkit-gradient(linear, left top, right top, color-stop(50%, #fff), to(#f8f8f8));background: linear-gradient(to right, #fff 50%, #f8f8f8 100%);border:0px solid gray;border-right:1px solid #ccc;-webkit-box-shadow: 1px 1px 10px 1px rgb(0 0 0 / 23%);box-shadow: 1px 1px 10px 1px rgb(0 0 0 / 23%); /* right and left only */-webkit-box-shadow: 5px 1px 11px -5px rgb(0 0 0 / 23%);box-shadow: 5px 1px 11px -5px rgb(0 0 0 / 23%); /* right only */-webkit-box-shadow: 0px 0px 0px 0px rgb(0 0 0 / 23%);box-shadow: 0px 0px 0px 0px rgb(0 0 0 / 23%); /* none */}a:hover{color:gray!important;}.list-group-item {position: relative;display: block;padding: 10px 15px;margin-bottom: -1px;background-color: transparent;border: 0px solid #ddd;}.tocify ul, .tocify li {line-height: 20px;}.tocify ul, .tocify li {list-style: none;margin: 0;padding: 0;border: none;line-height: 30px;}.tocify-header {text-indent: 10px;}.list-group {padding-left: 0;margin-bottom: 20px;}.list-group-item.active, .list-group-item.active:focus, .list-group-item.active:hover {z-index: 2;color: #fff;background-color: gray;border: 0px solid;}#header{background-color: #fff;border-bottom: 1px solid #ccc;padding-top: 10px;}#header .title{color: darkblue!important;}.yellow{background-color:yellow;}.red{background-color:red;}.green{background-color:green;}#headerx {position: sticky;top: 0;}#headerx:before {background-image: url(headerximgurl);content: \"\";float: right;width: calc(100%/4);margin-top: 10px;height: 100px;background-size: cover;}.list-group-item.active:hover {opacity:0.7;}.list-group-item.active::before, .list-group-item::before {display: inline-block;font-style: normal;font-variant: normal;text-rendering: auto;-webkit-font-smoothing: antialiased;float:left;}#TOC {margin: 25px 0px 20px 0px;}div.tocify {width: 20%;max-width: 260px;max-height: 85%;}.tocify {width: 20%;max-height: 90%;overflow: auto;margin-left: 2%;position: fixed;border: 0px solid #ccc;border-radius: 6px;}.container-fluid {}.main-container{}@media (min-width: 1200px).container, .container-lg, .container-md, .container-sm, .container-xl {max-width: 1140px;}@media (min-width: 992px).container, .container-lg, .container-md, .container-sm {max-width: 960px;}@media (min-width: 768px).container, .container-md, .container-sm {max-width: 720px;}@media (min-width: 576px).container, .container-sm {max-width: 540px;}div.main-container {max-width: 1200px!important;}.container, .container-fluid, .container-lg, .container-md, .container-sm, .container-xl {width: 100%;padding-right: 15px;padding-left: 15px;margin-right: auto;margin-left: auto;}h1, .h1 {font-size: 30px!important;}h2, .h2 {font-size: 24px!important;}h3, .h3 {font-size: 18px!important;}h4, .h4 {font-size: 14px!important;}h5, .h5 {font-size: 12px!important;}h6, .h6 {font-size: 10px!important;}h4, .h4, h5, .h5, h6, .h6 {margin-top: 10px;margin-bottom: 10px;}h1, .h1, h2, .h2, h3, .h3 {margin-top: 20px;margin-bottom: 10px;}h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {font-family: inherit;font-weight: 500;line-height: 1.1;color: inherit;}h1 {margin: 0.67em 0;font-size: 2em;}.sliderimageinput,.slidertableinput, .slidertablefont {accent-color: gray;display: inline-block!important;width: 40%!important;}.slidertableinput, .slidertablefont {width: 100%!important;}.d-flex{ display: flex; }.slidertable {border-collapse: collapse;margin: 25px 0;box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);}.slidertable th,.slidertable td {padding: 12px 15px;}.slidertable tbody tr, .slidertable tr {border-bottom: 1px solid #dddddd;}.slidertable tbody tr:nth-of-type(even), .slidertable tr:nth-of-type(even) {background-color: #f3f3f3;}.slidertable tbody tr:last-of-type, .slidertable tr:last-of-type {border-bottom: 2px solid gray;}.slidertable thead tr, .slidertable > tr {background-color: gray;color: #ffffff;text-align: left;}.font-weight-bold{font-weight:bold!important;}div.tocifyx {width: 23%!important;max-width: unset!important;max-height: 85%!important;}</style><script>$(window).load(function () {    $('.list-group-item').prepend('<b>&#10097;&emsp;</b>');    /*elements with images*/    $( \"p:has(img)\" ).each(function(index,item){      $(this).addClass( \"sliderimagep\"+index);      $(this).prepend('<div class=\"d-flex font-weight-bold\">Resize image: &emsp;<input class=\"sliderimageinput\" type=\"range\" min=\"1\" max=\"100\" value=\"50\"></div>');    });    $(\".sliderimageinput\").on('input',function(){      let newwidth = $(this).val();      $(this).parent().parent().children(\"img\").each(function(index,val){        $(this).attr('width',newwidth+\"%\");      });    });    /*elements with tables*/    $( \"table\" ).each(function(index,item){      $(this).addClass( \"slidertable slidertable\"+index);      $('<div class=\"d-flex font-weight-bold\"><div>Resize table size:&emsp;<input class=\"slidertableinput\" data=\"'+\"slidertable\"+index+'\" type=\"range\" min=\"1\" max=\"100\" value=\"100\"></div>'+      '<div>Resize table font:&emsp;<input class=\"slidertablefont\" type=\"range\" min=\"9\" data=\"'+\"slidertable\"+index+'\" max=\"50\" value=\"12\"></div></div>').insertBefore(this);    });    $(\".slidertableinput\").on('input',function(){      let newwidth = $(this).val();      $(\".\"+$(this).attr(\"data\")).css(\"width\",$(this).val()+\"%\");    });    $(\".slidertablefont\").on('input',function(){      let newwidth = $(this).val();      $(\".\"+$(this).attr(\"data\")).css(\"font-size\",$(this).val()+\"px\");    });});</script>"
+attr(,"html")
+[1] TRUE
+attr(,"class")
+[1] "html"      "character"
+
+<style type="text/css">
+.dataTables_scrollHeadInner{
+  width:100% !important;
+}
+.dataTables_scrollHeadInner table{
+  width:100% !important;
+}
+/*
+.code-folding-btn {
+  display: none;
+}
+*/
+h3, .h3 {
+  font-size: 22px!important;
+}
+h4, .h4 {
+  font-size: 18px!important;
+}
+h5, .h5 {
+  font-size: 16px!important;
+}
+body{
+  font-size: 13px;
+}
+pre {
+  line-height: 1;
+}
+.tocify-subheader {
+    text-indent: 15px;
+    display: none;
+    font-size: 12px;
+}
+</style>here() starts at /nemo/lab/gandhis/home/users/wagena/SNCA
+[1] "CD16p_Mono"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/ota_foo_complete/coloc/CD16p_Mono/liberal"
+[1] "CL_Mono"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/ota_foo_complete/coloc/CL_Mono/liberal"
+[1] "CM_CD8"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/ota_foo_complete/coloc/CM_CD8/liberal"
+[1] "DN_B"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/ota_foo_complete/coloc/DN_B/liberal"
+[1] "EM_CD8"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/ota_foo_complete/coloc/EM_CD8/liberal"
+[1] "Fr_I_nTreg"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/ota_foo_complete/coloc/Fr_I_nTreg/liberal"
+[1] "Fr_II_eTreg"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/ota_foo_complete/coloc/Fr_II_eTreg/liberal"
+[1] "Fr_III_T"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/ota_foo_complete/coloc/Fr_III_T/liberal"
+[1] "Int_Mono"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/ota_foo_complete/coloc/Int_Mono/liberal"
+[1] "LDG"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/ota_foo_complete/coloc/LDG/liberal"
+[1] "mDC"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/ota_foo_complete/coloc/mDC/liberal"
+[1] "Mem_CD4"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/ota_foo_complete/coloc/Mem_CD4/liberal"
+[1] "Mem_CD8"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/ota_foo_complete/coloc/Mem_CD8/liberal"
+[1] "Naive_B"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/ota_foo_complete/coloc/Naive_B/liberal"
+[1] "Naive_CD4"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/ota_foo_complete/coloc/Naive_CD4/liberal"
+[1] "Naive_CD8"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/ota_foo_complete/coloc/Naive_CD8/liberal"
+[1] "NC_Mono"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/ota_foo_complete/coloc/NC_Mono/liberal"
+[1] "Neu"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/ota_foo_complete/coloc/Neu/liberal"
+[1] "NK"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/ota_foo_complete/coloc/NK/liberal"
+[1] "pDC"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/ota_foo_complete/coloc/pDC/liberal"
+[1] "Plasmablast"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/ota_foo_complete/coloc/Plasmablast/liberal"
+[1] "SM_B"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/ota_foo_complete/coloc/SM_B/liberal"
+[1] "TEMRA_CD8"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/ota_foo_complete/coloc/TEMRA_CD8/liberal"
+[1] "Tfh"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/ota_foo_complete/coloc/Tfh/liberal"
+[1] "Th1"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/ota_foo_complete/coloc/Th1/liberal"
+[1] "Th17"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/ota_foo_complete/coloc/Th17/liberal"
+[1] "Th2"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/ota_foo_complete/coloc/Th2/liberal"
+[1] "USM_B"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/ota_foo_complete/coloc/USM_B/liberal"
+[1] "CD16p_Mono"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/ota_foo_complete/coloc/CD16p_Mono/robust"
+[1] "CL_Mono"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/ota_foo_complete/coloc/CL_Mono/robust"
+[1] "CM_CD8"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/ota_foo_complete/coloc/CM_CD8/robust"
+[1] "DN_B"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/ota_foo_complete/coloc/DN_B/robust"
+[1] "EM_CD8"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/ota_foo_complete/coloc/EM_CD8/robust"
+[1] "Fr_I_nTreg"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/ota_foo_complete/coloc/Fr_I_nTreg/robust"
+[1] "Fr_II_eTreg"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/ota_foo_complete/coloc/Fr_II_eTreg/robust"
+[1] "Fr_III_T"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/ota_foo_complete/coloc/Fr_III_T/robust"
+[1] "Int_Mono"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/ota_foo_complete/coloc/Int_Mono/robust"
+[1] "LDG"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/ota_foo_complete/coloc/LDG/robust"
+[1] "mDC"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/ota_foo_complete/coloc/mDC/robust"
+[1] "Mem_CD4"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/ota_foo_complete/coloc/Mem_CD4/robust"
+[1] "Mem_CD8"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/ota_foo_complete/coloc/Mem_CD8/robust"
+[1] "Naive_B"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/ota_foo_complete/coloc/Naive_B/robust"
+[1] "Naive_CD4"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/ota_foo_complete/coloc/Naive_CD4/robust"
+[1] "Naive_CD8"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/ota_foo_complete/coloc/Naive_CD8/robust"
+[1] "NC_Mono"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/ota_foo_complete/coloc/NC_Mono/robust"
+[1] "Neu"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/ota_foo_complete/coloc/Neu/robust"
+[1] "NK"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/ota_foo_complete/coloc/NK/robust"
+[1] "pDC"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/ota_foo_complete/coloc/pDC/robust"
+[1] "Plasmablast"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/ota_foo_complete/coloc/Plasmablast/robust"
+[1] "SM_B"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/ota_foo_complete/coloc/SM_B/robust"
+[1] "TEMRA_CD8"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/ota_foo_complete/coloc/TEMRA_CD8/robust"
+[1] "Tfh"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/ota_foo_complete/coloc/Tfh/robust"
+[1] "Th1"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/ota_foo_complete/coloc/Th1/robust"
+[1] "Th17"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/ota_foo_complete/coloc/Th17/robust"
+[1] "Th2"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/ota_foo_complete/coloc/Th2/robust"
+[1] "USM_B"
+[1] "/nemo/lab/gandhis/home/users/wagena/SNCA/processed_data/ota_foo_complete/coloc/USM_B/robust"

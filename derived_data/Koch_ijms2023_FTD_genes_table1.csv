@@ -1,0 +1,19 @@
+﻿Gene,Chromosome,Mutations,Frequency,Protein Function,Neuropathology,Phenotypes,References
+C9orf72,9,Intronic hexanucleotide repeat expansions,10%,"Nucleocytoplasmic transport, autophagy, intercellular trafficking","TDP-43 (types B, A), RNA foci, DRPs inclusions","FTD, ALS, FTD-ALS","[73,74,81,82,83,85]"
+GRN,17,"Frameshit, splicing, nonsense, deletions",10%,"Angiogenesis, wound healing, inflammation, lysosomal function, brain development, synapse functioning",TDP-43 type A,"FTD, PPA, CBS","[73,74,96,97,99,100]"
+MAPT,17,"Missense, splicing, deletions, duplications",10%,"Microtubule stabilisation, assembly, neuronal activity, neurogenesis, iron transport, DNA maintenance",TAU,"FTD, FTD with parkinsonism, PSP, CBS, AD","[73,74,86,87,88,89,105]"
+TBK1,12,Missense,5%,"Pattern recognition receptors signalling pathway upon viral infection, autophagy","TDP-43 types A, B","ALS, FTD, FTD-MND","[103,106,107]"
+TARDBP,1,Missense,1%,"Encodes for TDP-43, RNA processing and metabolism, stress granule formation",TDP-43,"ALS, FTD with or without MND, FTD-MND plus hypokinetic or hyperkinetic movement disorders","[108,109]"
+FUS,16,Missense,1%,"DNA and RNA metabolism, including DNA repair, transcription regulation, RNA splicing and export to the cytoplasm",FET,ALS,[110]
+CHMP2B,3,Splicing,<1%,"Encodes for a component of ESCRT-III (endosomal sorting complex required for transport III), degradation of surface receptor proteins, formation of endocytic multivesicular bodies",UPS,"FTD, ALS, FTD-MND",[111]
+VCP-1,9,Missense,<1%,"Organelle biogenesis, ubiquitin-dependent protein degradation, autophagy",TDP-43 type D,"IBMPFD (Paget bone disease, inclusion body myositis and FTD), ALS, FTD-MND (MSP)","[112,113]"
+SQSTM1,5,Missense,<1%,"NFkB signaling, apoptosis, transcription regulation, ubiquitin-mediated autophagy",TDP-43,"Paget bone disease, ALS, FTD, distal myopathy (MSP)",[114]
+CHCHD10,22,Missense,<1%,"OXPHOS regulation, maintenance of mitochondrial cristae morphology","Not classified, no TDP-43 accumulation","FTD-MND, mitochondrial myopathy",[115]
+OPTN,10,"Missense, deletions",<1%,"Vesicular trafficking, endocytic trafficking, NFkB signaling",TDP-43 type A,"ALS, FTD-MND",[107]
+UBQLN2,X,Missense,<1%,Regulation of proteasome-mediated ubiquinated proteins degradation,U,ALS with FTD,[116]
+TUBA4A,2,Missense,<1%,Microtubule network assembly,TDP-43 type A,"ALS, FTD",[117]
+CCNF,16,Missense,<1%,Proteasomal degradation,TDP-43,FTD-ALS,[118]
+TIA1,2,Missense,<1%,"Splicing regulation, translation repression",TDP-43,"ALS, FTD-ALS",[119]
+CYLD,16,Missense,<1%,"Deubiquitination, negative regulator of NFkB",TDP-43,FTD-ALS,[120]
+ABCA7,19,Frameshit,<1%,"Lipids transporter, phagocytosis",,FTD,[75]
+CTSF,11,Missense,<1%,Lysosomal protease,,FTD,[75]

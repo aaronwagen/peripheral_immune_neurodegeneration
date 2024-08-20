@@ -1,0 +1,1988 @@
+---
+title: "Analyse colocalisation of peripheral immune-cell genes and PD GWAS risk"
+author: 
+- name: "Aaron Wagen"
+  affiliation: UCL
+date: "`r format(Sys.time(), '%d %B %Y')`"
+output:
+  bookdown::html_document2:
+    figure_caption: yes
+    code_folding: hide
+    theme: paper
+    highlight: haddock
+    df_print: paged
+    toc: true
+    toc depth: 3
+    toc_float: true
+    number_sections: true
+  md_document:
+    variant: markdown_github
+    toc: true
+    number_sections: true
+always_allow_html: true
+link-citations: true
+notes-after-punctuation: false
+---
+
+# Setup
+
+```{r setup, include = F}
+## Load libraries
+library(here) # For project-specific paths
+library(tidyverse) # For tidy manipulation of data
+library(coloc)
+library(colochelpR)
+library(data.table)
+library(plyranges)
+library(tidytable) # For faster separation of columns of eqtl data
+library(GenomicRanges) 
+library(biomaRt)
+library(qdapTools)
+library(LDlinkR)
+library(pheatmap)
+library(DBI)
+library(patchwork)
+library(viridis)
+library(sciRmdTheme)
+library(paletteer)
+library(pheatmap)
+library(wesanderson)
+library(ggrepel)
+library(ggh4x)
+library(tidyr)
+library(ggpubr)
+library(gt)
+
+
+## Set options
+options(dplyr.summarise.inform = FALSE)
+options(lifecycle_verbosity = "warning")
+knitr::opts_chunk$set(echo = T, warning = F, message = F, out.width="100%", fig.align = "center", dpi = 100)
+
+
+
+
+plot_labels = c("PD2019_ex23andMe" = "European PD GWAS",
+                "foo2020" = "East Asian PD GWAS",
+                 "rizig2023" = "African PD GWAS",
+                "Aquino 2023" = "Multi-ancestry eQTL",
+                "Ota 2021" = "East-Asian eQTL",
+                "SNCA" = "SNCA",
+                "GBA" = "GBA",
+                "LRRK2" = "LRRK2",
+                "BIN1" = "BIN1",
+                "Monocyte_COV" = "Monocyte + SARS-CoV-2",
+                "Monocyte_NS" = "Monocyte",
+                "Dendritic-plasmacytoid_NS" = "Dendritic Plasmacytoid",
+                "Mono-cd14_NS" = "Monocyte CD14+",
+                "CD16p_Mono" = "Monocyte CD16+",
+                "CL_Mono" = "Monocyte Classical",
+                "mDC" = "Dendritic Myeloid",
+                "pDC" = "Dendritic Plasmacytoid")
+          
+                
+plot_labeller = as_labeller(plot_labels)
+
+    # scale_fill_paletteer_d("ggthemes::Classic_20",
+    #                        na.value = "grey90",
+    #                        name = "Biotype",
+    #                        labels = plot_labels) 
+    
+my_palette <- c("Colocalised" = "darkslategrey",
+             "Suggestive" = "aquamarine3",
+             "Distinct" = "indianred3",
+             "Not_signif" = "grey70",
+             "PPH4" = "darkslategrey",
+             "PPH3" = "indianred3",
+             "TRUE" = "darkslategrey",
+             "FALSE" = "grey70")
+
+
+```
+
+```{r load-theme, echo = F, results = "asis"}
+
+## Custom sciRmdTheme with increased width.
+## Please ask guillermorocamora@gmail.com for more details.
+sciRmdTheme::set.theme(
+  theme = "default",
+  color = NULL,
+  header.sticky = FALSE,
+  list.group.icon = "arrow",
+  font.family = "Arial",
+  font.color = "black",
+  header.color = "darkblue"
+)
+
+
+
+# Set defaults for ggplots 
+theme_aw <- theme_bw(base_family = "Helvetica",
+           base_size = 14) + 
+    theme(panel.grid.major.x = element_blank(),
+          panel.grid.minor.x = element_blank(),
+          strip.background = element_blank(),
+          legend.position = "bottom",
+          axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1),
+          axis.title.y = element_text(vjust = 0.6),
+          panel.spacing = unit(0.1, "lines"))
+
+
+theme_set(theme_aw)
+
+
+
+```
+
+
+```{r, echo = F, results = "asis"}
+
+## Custom styles for the output html
+cat('
+<style type="text/css">
+.dataTables_scrollHeadInner{
+  width:100% !important;
+}
+.dataTables_scrollHeadInner table{
+  width:100% !important;
+}
+/*
+.code-folding-btn {
+  display: none;
+}
+*/
+h3, .h3 {
+  font-size: 22px!important;
+}
+h4, .h4 {
+  font-size: 18px!important;
+}
+h5, .h5 {
+  font-size: 16px!important;
+}
+body{
+  font-size: 13px;
+}
+pre {
+  line-height: 1;
+}
+.tocify-subheader {
+    text-indent: 15px;
+    display: none;
+    font-size: 12px;
+}
+</style>')
+```
+
+
+```{r paths}
+
+ location <- "nemo"
+if (location == "jane") {
+  base_dir <- "/Volumes/lab-gandhis/home/users/wagena/periph_immune_neurodegen/"
+} else if (location == "nemo") {
+  base_dir <- here::here()
+  options(bitmapType='cairo') # Add graphics device for nemo
+}
+
+
+# Set path
+here::i_am("docs/02_analyse_coloc_results.Rmd")
+```
+
+
+```{r arguments}
+args <- list(
+  eqtl_raw_data_dir = file.path(base_dir, "raw_data", 
+                         "ebi_eqtl_catalogue"),
+  gwas_results_path = file.path(base_dir, "/nemo/lab/gandhis/home/users/wagena/references/GWAS/"),
+  AD_genes_file = str_c(base_dir, "/derived_data/Goate_neurobiodis2020_AD_genes_w_destrooper.csv"),
+  PD_genes_file = str_c(base_dir, "/derived_data/Blauendraat_lancetneuro2020_table1_PDgenes.csv"),
+  aquino_foo_coloc_path = file.path(base_dir, "processed_data",
+                                "foo_aquino",
+                                "coloc"),
+  aquino_eqtl_summary_path = file.path(base_dir, "raw_data",
+                                        "GWAS",
+                                        "aquino_2023_covid_eqtl/aquino_summary_table.csv"),
+  aquino_nalls_coloc_path = file.path(base_dir, "processed_data",
+                                "nalls_aquino",
+                                "coloc"),
+  aquino_rizig_coloc_path = file.path(base_dir, "processed_data",
+                                "rizig_aquino",
+                                "coloc"),
+  ota_foo_coloc_path = file.path(base_dir, "processed_data",
+                                 "ota_foo_complete",
+                                 "coloc"),
+  rizig_nedelec_quach_coloc_path = file.path(base_dir, "processed_data",
+                                "rizig_nedelec_quach",
+                                "coloc"),
+  aquino_jansen_coloc_path = file.path(base_dir, "processed_data",
+                                "jansen_aquino",
+                                "coloc"),
+   aquino_shigemizu_coloc_path = file.path(base_dir, "processed_data",
+                                "shigemizu_aquino",
+                                "coloc"),
+  eqtl_dir = file.path(base_dir, "raw_data/GWAS/aquino_2023_covid_eqtl"),
+  ota_foo_lrrk2_snca_results_path = file.path(base_dir, "processed_data/foo_jama_2020/coloc/ota_foo_lrrk2_snca_results.RDS"),
+  eqtl_sample_number = 222, # There are 222 individuals included in the aquino dataset
+  panel_app_genes_file = "~/AIediting/references/panel_app_PD_complex_park_gene_list.tsv",
+  nalls_mend_rand_file = "~/references/GWAS/GWAS_Nalls_2019_mendrand.csv",
+  nalls_tidy_varbeta  = file.path(base_dir, "raw_data/GWAS/coloc_munged_data/PD2019_ex23andMe_tidy_varbeta.txt")
+)
+
+
+
+
+```
+
+
+
+
+>Aim: This analysis explores whether expression of genes that cause neurodegenerative diseases (NDDs) in peripheral immune cells can mediate the risk of NDDs. This is done in an ancestry-specific manner, using genetic colocalisation.
+<br><br>
+
+# Background
+
+
+## Colocalisation analysis
+
+Coloc uses a Bayesian approach to test the following hypotheses:
+
+* H0: No association with either trait.
+* H1: Association with trait 1, not with trait 2.
+* H2: Association with trait 2, not with trait 1.
+* H3: Association with trait 1 and 2, two distinct SNPs.
+* **H4: Association with trait 1 and trait 2, one colocalised SNP.** 
+<br>
+
+The prior probabilities for the Beyesian framework were specified as follows:
+
+* p1: the prior probability that any random SNP in the region is associated with trait 1 [coloc default, 1e-04]
+* p2: the prior probability that any random SNP in the region is associated with trait 2 [coloc default, 1e-04]
+* p12: the prior probability that any random SNP in the region is associated with both traits [coloc default, 1e-05]
+
+<br>
+
+Interpretation of results:
+
+* A colocalising signal is one with PPH4 > 0.75
+* A distinct signal is one with PPH3 > 0.75
+* For the purpose of this study, we have defined a 'suggestive' signal as one with PPH4<0.75, sum of PPH3 + PPH4 >0.5, and ratio PPH4/PPH3 > log2(9).
+
+
+
+<br>
+![Alt text](https://journals.plos.org/plosgenetics/article/figure/image?size=large&id=10.1371/journal.pgen.1004383.g001){width=75%}
+
+
+
+<br>
+
+
+This analysis utilises the wrapper functions within the colochelper package, written by David Zhang and Regina Reynolds.
+
+
+## Expression Quantitative Trait Loci (eQTL)
+
+### Multi-ancestry eQTL (Aquino et al)
+This analysis uses as its baseline the multi-ancestry eQTL study from [Aquino et al 2023](https://www.nature.com/articles/s41586-023-06422-9), noting that it incorporates samples from African, East Asian and European donors, across multiple cell types and activation states.
+<br>
+
+They took blood from 222 donors (80 Central African, 80 West European, 62 East Asian) and exposed this to either COVID or Influenza before 10x single cell sequencing. They derived the following 5 cell types and 22 subtypes:
+
+- B-cell
+  - B-memory-k
+  - B-memory-l
+  - B-naive-k
+  - B-naive-l
+  - Plasmablast
+- Monocyte
+  - Mono-cd14
+  - Mono-cd14-infected
+  - Mono-cd16
+  - Dendritic-classic
+  - Dendritic-plasmacytoid
+- NK
+  - NK-CD56-bright
+  - NK-CD56-dim
+  - NK-memory-like
+  - NK-innate_lymphoid
+- T-CD4
+  - T-CD4-effector
+  - T-CD4-naive
+  - T-reg
+- T-CD8
+  - T-CD8-central-effector-mem
+  - T-CD8-effector-mem-reexpress-cd45RA
+  - T-CD8-naive
+  - T-gammadelta
+  - T-mucosal-assoc-invariant
+
+
+Each of these were sequenced untreated, or after exposure to Covid or influenza. eQTLs were derived at baseline, as well as response QTLs.
+
+  
+```{r}
+
+# Load the summary table that has been presaved. It has been generated using the code below:
+eqtl_df <- read_csv(args$aquino_eqtl_summary_path)
+
+aquino_cell_order <-c("Dendritic-classic",
+                      "Dendritic-plasmacytoid",
+                      "Monocyte",
+                      "Mono-cd14",
+                      "Mono-cd14-infected",
+                      "Mono-cd16",
+                      "NK",
+                      "NK-CD56-bright",
+                      "NK-CD56-dim",
+                      "NK-memory-like",
+                      "NK-innate-lymphoid",
+                      "B-cell",
+                      "B-memory-k",
+                      "B-memory-l",
+                      "B-naive-k",
+                      "B-naive-l",
+                      "Plasmablast",
+                      "T-CD4",
+                      "T-CD4-effector",
+                      "T-CD4-naive",
+                      "T-reg",
+                      "T-CD8",
+                      "T-CD8-central-effector-mem",
+                      "T-CD8-effector-mem-reexpress-cd45RA",
+                      "T-CD8-naive",
+                      "T-gammadelta",
+                      "T-mucosal-assoc-invariant"
+)
+
+```
+
+
+
+<br>
+![Alt text](https://media.springernature.com/full/springer-static/image/art%3A10.1038%2Fs41586-023-06422-9/MediaObjects/41586_2023_6422_Fig1_HTML.png?as=webp){width=100%}
+
+
+### Other eQTL datasets
+
+Other datasets included in this study include:
+
+- [Ota et al, Cell, 2021](https://doi.org/10.1016/j.cell.2021.03.056): an East Asian specific eQTL including 79 healthy volunteers and 337 patients with one of 10 categories of immune mediated diseases.
+- [Nedelec et al 2016](https://doi.org/10.1016/j.cell.2016.09.025): an African and African admixed eQTL study of macrophages
+- [Quach et al 2016](https://doi.org/10.1016/j.cell.2016.09.024): an African and African admixed eQTL study of monocytes
+
+## GWAS processing
+
+GWASs in this study has been processed using the following script:
+```{r, eval = F}
+
+source(file.path(base_dir, "01_munge_GWASs_for_coloc.R"))
+```
+
+
+# Colocalisation in Alzheimer's disease
+
+## Alzheimer's disease gene list
+
+The AD genes of interest were derived from Alison Goates [Genetic architecture of AD in Neurobiology of disease (2020)](https://doi.org/10.1016/j.nbd.2020.104976). The genes selected were those highlighted in red, indicated increased confidence of causation.
+
+
+```{r}
+AD_gene_df <- read_delim(args$AD_genes_file) %>% 
+  dplyr::filter(Confident_goate == "Y")
+AD_genes <- tibble(disease = "AD",
+                   gene = AD_gene_df$`Reported gene`)
+
+AD_gene_list <- AD_genes$gene %>%  unlist()
+
+AD_gene_list
+```
+
+## European AD GWAS (Jansen) and multi-ancestry eQTL (Aquino)
+
+### Analysis
+
+The analysis was undertaken with the following script:
+
+
+```{r,  eval=F}
+source(here::here("r_scripts/02a_run_coloc_gwas_immune_aquino_jansen.R")
+```
+
+The results were then processed using the following script:
+
+```{r, eval=F}
+source(here::here("r_scripts",
+                  "03a_process_jansen_aquino_coloc_results.R")
+```
+
+
+### Results
+
+```{r}
+all_results <- readRDS(str_c(args$aquino_jansen_coloc_path, "/coloc_summary.Rds"))
+
+results <- all_results$liberal
+results <- results %>% 
+  separate(dataset, 
+           into = c("Eqtl_type", "Cell_resolution", "Cell_name", "Treatment"), 
+           sep = "_",
+           remove = F) %>% 
+  dplyr::mutate(significant = case_when(PP.H4.abf >=0.75 ~ "Colocalised",
+                                        PP.H3.abf >= 0.75 ~ "Distinct",
+                                        sum_PPH3_PPH4 >0.5 & 
+                                          ratio_PPH4_PPH3 > log2(9) & 
+                                          PP.H4.abf < 0.75 ~ "Suggestive",
+                                        TRUE ~ "Not_signif"),
+                Treatment = as_factor(Treatment) %>% fct_relevel(c("NS", "IAV", "COV")),
+                Cell_name = as_factor(Cell_name) %>% fct_relevel(aquino_cell_order)
+                ) %>% 
+  dplyr::filter(gene_name %in% AD_gene_list) 
+
+
+write_csv(results,
+          file = file.path(base_dir, "derived_data/jansen_aquino_AD_gene_results.csv"))
+
+NDD_gene_heatmap <- results %>% 
+  dplyr::filter(significant != "Not_signif",
+                Eqtl_type == "expression") %>% 
+  ggplot(aes(x = Treatment, y = fct_rev(Cell_name), fill = significant)) +
+  geom_tile() +
+  theme(panel.grid = element_blank(),
+        legend.position = "bottom") +
+  scale_fill_manual(values = my_palette) +
+  facet_grid(. ~gene_name, switch = "y") + 
+  labs(fill = NULL,
+       y = "Cell type")
+
+ggsave(NDD_gene_heatmap,
+       file = file.path(base_dir, "figures/Supp_Jansen_aquino_AD_genes.pdf"),
+       units = "cm", width = 17, height = 12)
+
+ggsave(NDD_gene_heatmap,
+       file = file.path(base_dir, "figures/Supp_Jansen_aquino_AD_genes.png"),
+       units = "cm", width = 17, height = 12)
+
+
+NDD_gene_heatmap +
+  labs(title = "Aquino with Jansen GWAS")
+
+```
+
+
+
+### Analysis of BIN1 locus
+
+
+Exploring p values for individual SNPs contributing to a locus allows confirmation of a true colocalisation - if the SNPs of highest significance of one trait are also of significance for another, it is likely that this is a true signal.
+<br>
+The beta comparison plots allows exploration re whether the direction of the significant signals align or not, based on the correlation of betas between one trait and another. In the eQTLs, the slope indicates the effect size of alternative alleles (not the ref allele found in the human genome reference) - this is concordant with the GWAS betas so directions of results can be compared directly. 
+<br>
+
+
+Using the following bash code to generate the list of .rda files:
+```{bash, eval = F}
+
+find processed_data/jansen_aquino/coloc/ -type f -name "*.rda" > processed_data/jansen_aquino/coloc/jansen_aquino_rda_list.txt
+```
+
+
+This code then compares the p-values and direction of effect of SNPs between the GWAS and eQTL:
+```{r}
+
+genes_to_compare <- "BIN1"
+eqtl_to_compare <- "expression_celltype_Monocyte_NS"
+chromosome_lookup <- tibble(gene_name = c("BIN1"),
+                            chromosome = c("chr2")
+                            )
+
+
+
+jansen_aquino_rda_list <- read_tsv(str_c(args$aquino_jansen_coloc_path, "/jansen_aquino_rda_list.txt"),
+                                  col_names = "file_path")
+
+# Split file path into components: directory, file_name, eqtl, gwas_path, gwas, prior_tyoe, gene
+results_dir <- jansen_aquino_rda_list %>% 
+   dplyr::mutate(dir = file_path %>% 
+                    str_replace(., "/[^/]*$", "") %>% 
+                    str_replace(., "/[^/]*$", ""),
+                  file_name = basename(file_path) %>% 
+                    str_replace(., ".rda", ""),
+                  eqtl = basename(dir),
+                  gwas_path = dir %>% 
+                    str_replace(., "/[^/]*$", ""),
+                  gwas = basename(gwas_path),
+                  prior_type = file_path %>% 
+                    str_replace(., "/[^/]*$", "") %>% 
+                    basename(),
+                  gene = str_replace(file_name, ".+_(.*)", "\\1")
+    ) %>% 
+    dplyr::filter(prior_type == "liberal")
+  
+
+loci_to_explore <- results %>% 
+  dplyr::filter(str_detect(Eqtl_type, "expression"),
+               gene_name %in% genes_to_compare,  #Filter to match the results we are exploring
+               dataset %in% eqtl_to_compare
+  )
+
+
+
+
+# The aquino eqtls are divided by chromosome, so I will join the correct path from the aquino eqtl summary to the corresponding coloc result. This will allow loading of the original eqtl path to allow filtering by the SNP identifier (rsNumber for snps involved in that coloc.
+sig_coloc_files <- left_join(loci_to_explore,
+          results_dir,
+          by = c("gene_2" = "gene",
+                 "dataset" = "eqtl")
+          ) %>% 
+  left_join(.,
+            chromosome_lookup,  # Add in chromosomes of the different genes
+            by = "gene_name") %>% 
+  left_join(.,
+            eqtl_df %>% 
+              dplyr::select(eqtl_name, eqtl_chromosome, eqtl_path),
+            by = c("dataset" = "eqtl_name",
+                   "chromosome" = "eqtl_chromosome"))
+
+
+
+```
+
+
+
+```{r, eval=FALSE}
+jansen_coloc_loci_list <- list()
+
+# Load the original gwas
+gwas_path = args$jansen_tidy_varbeta
+gwas <- fread(gwas_path)
+
+for(i in 1:nrow(sig_coloc_files)){
+  
+
+  gwas_name = "jansen"
+  eqtl_name = sig_coloc_files$dataset[i]
+  coloc_results_path = file.path(base_dir, sig_coloc_files$file_path[i])
+  eqtl_path = sig_coloc_files$eqtl_path[i]
+  eqtl_path <- sub(".*SNCA/", str_c(base_dir, "/"), eqtl_path) # Replace anything before and including 'SNCA/' with the new base directory
+  gene_name = sig_coloc_files$gene_name[i]
+  chromosome_number <-  sig_coloc_files$chromosome[i]
+  coloc_significance = sig_coloc_files$significant[i]
+  coloc_locus = str_c(gwas_name, " - ", eqtl_name, " - ", gene_name)
+  coloc_label = str_c(gwas_name, " - ", eqtl_name, " - ", gene_name , " - ", coloc_significance)
+  
+  print(str_c("Locus number is: ", i))
+  print(str_c("Locus is: ", coloc_label))
+  print(eqtl_name)
+  
+
+# Load the original eqtl
+eqtl <- fread(eqtl_path)
+eqtl %<>% 
+  dplyr::mutate(eqtl_dataset = eqtl_name) %>% 
+  dplyr::select(eqtl_dataset,
+                gene,
+                SNP = rsID,
+                beta = slope,
+                se = slope_se,
+                p.value = pvalue,
+                Al1 = ALT,
+                Al2 = REF)
+
+# Load the coloc results for this loci - this command loads a data called 'coloc_results_annotated'
+load(coloc_results_path)
+
+# Select out SNPs to explore
+SNPS_to_explore <- coloc_results_annotated$results$snp
+
+
+gwas_snps <- gwas %>% 
+  dplyr::filter(SNP %in% SNPS_to_explore)
+
+eqtl_snps <- eqtl %>% 
+  dplyr::filter(SNP %in% SNPS_to_explore) %>% 
+  arrange(p.value) %>%  # Arrange rows within each SNP group by p-value
+  distinct(SNP, .keep_all = TRUE) %>%  # Keep the SNP entry with the lowest p value, as per the coloc analysis
+  ungroup() %>% 
+  arrange(SNP)
+
+
+
+
+
+message("Join eqtl with gwas and check direction")
+# Join the gwas and eqtl datasets - this is dorn using the colochelpr function which raises warnings if the datasets are not aligned properly.
+locus_gwas_qtl_overlap <- colochelpR::join_coloc_datasets(df1 = gwas_snps, 
+                                    df2 = eqtl_snps, 
+                                    harmonise = T) %>% 
+  arrange(SNP)
+
+
+
+data_to_plot <- locus_gwas_qtl_overlap %>% 
+  dplyr::select(SNP, gene = gene_2, tissue = eqtl_dataset_2, 
+                Al1_gwas = Al1_1, Al2_gwas = Al2_1, beta_gwas = beta_1, p_gwas = p.value_1, 
+                Al1_eqtl = Al1_2, Al2_eqtl = Al2_2, beta_eqtl = beta_2, p_eqtl = p.value_2) %>% 
+  dplyr::mutate(log_p_gwas = -log10(p_gwas),
+                log_p_eqtl = -log10(p_eqtl))
+
+# Check if Allele 1 and 2 match between datasets, by adding a column which will be TRUE if this is the case
+directionality_check <- 
+  data_to_plot %>% 
+  dplyr::mutate(matched_effect_and_alt_allele = case_when(Al1_gwas == Al1_eqtl & Al2_gwas == Al2_eqtl ~ TRUE,
+                                                          TRUE ~ FALSE),
+                swapped_effect_and_alt_allele = case_when(matched_effect_and_alt_allele == FALSE & Al1_gwas == Al2_eqtl & Al2_gwas == Al1_eqtl ~ TRUE,
+                                                          TRUE ~ FALSE))
+
+directionality_check %>% 
+  count(matched_effect_and_alt_allele,
+        swapped_effect_and_alt_allele)
+
+
+SNPs_to_exclude <- directionality_check %>%
+                             dplyr::filter(matched_effect_and_alt_allele == FALSE, swapped_effect_and_alt_allele== FALSE) %>%
+                             .[["SNP"]]
+
+SNPs_to_swap <- directionality_check %>% 
+                             dplyr::filter(matched_effect_and_alt_allele == FALSE, swapped_effect_and_alt_allele== TRUE) %>% 
+                             .[["SNP"]]
+
+harmonised_alleles <- 
+  data_to_plot %>% 
+  dplyr::filter(!SNP %in% SNPs_to_exclude) %>% 
+  dplyr::mutate(beta_2 = case_when(SNP %in% SNPs_to_swap ~ (-beta_eqtl),
+                                     TRUE ~ beta_eqtl),
+                Al1_eqtl = case_when(SNP %in% SNPs_to_swap ~ Al1_gwas,
+                                     TRUE ~ Al1_eqtl),
+                Al2_eqtl = case_when(SNP %in% SNPs_to_swap ~ Al2_gwas,
+                                     TRUE ~ Al2_eqtl))
+
+harmonised_alleles <- harmonised_alleles %>% 
+   dplyr::mutate(genome_wide_signif = case_when(p_gwas < 1e-5 | p_eqtl < 5e-8 ~ TRUE,
+                                               TRUE ~ FALSE) %>% 
+                   factor(., levels = c(TRUE, FALSE))) %>% 
+    arrange(log_p_gwas) 
+
+
+print("Creating plots") 
+
+
+
+
+
+p_plot <- harmonised_alleles %>% 
+  ggplot(aes(x = log_p_eqtl, y = log_p_gwas, colour = log_p_gwas)) +
+  geom_point(size = 0.7, alpha = 0.6) +
+   scale_colour_gradient(low = "grey80", high = "darkslategrey") +
+    ggpubr::stat_cor(method = "spearman", colour = "black", size = 4) +
+  theme_aw +
+    labs(x = "-log10(eQTL p-value)", 
+         y = "-log10(GWAS p-value)",
+          colour = "-log10(GWAS p-value)",
+         subtitle = coloc_label)
+  
+
+beta_plot <- harmonised_alleles %>% 
+  ggplot(aes(x = beta_eqtl, y = beta_gwas, colour = log_p_gwas)) +
+  geom_point(alpha = 0.6, size = 0.7) +
+    geom_smooth(formula = y ~ x, method = "lm", level = 0.99, colour = "black", size = 0.5, fill = "#4DA2B7") +
+      ggpubr::stat_cor(method = "spearman",  colour = "black", size = 4) +
+    scale_colour_gradient(low = "grey80", high = "darkslategrey") +
+    theme_aw +
+    labs(x = "eQTL beta",
+         y = "GWAS beta",
+          colour = "-log10(GWAS p-value)",
+         subtitle = coloc_label) 
+
+
+
+comparison_locus_plot <- ((p_plot + beta_plot)) +
+  plot_layout(guides = "collect") +
+  plot_annotation(subtitle = str_c("Coloc results: ", coloc_label), tag_levels = "A") &
+  theme(legend.position = "bottom")
+
+
+
+jansen_coloc_loci_list[[coloc_locus]] <- list(
+    locus_data = harmonised_alleles,
+    locus_plot = comparison_locus_plot)
+
+print("Locus complete")
+
+}
+
+saveRDS(jansen_coloc_loci_list,
+        file = file.path(base_dir, "processed_data/jansen_aquino/coloc/loci_BIN1.RDS"))
+
+
+```
+
+
+
+
+#### Summary figure BIN1 locus
+
+```{r}
+# Explore colocalised loci:
+locus_p_value_limits <- c(0, 15)
+
+jansen_coloc_loci_list <- readRDS(file.path(base_dir, "processed_data/jansen_aquino/coloc/loci_BIN1.RDS"))
+
+loci_to_explore <- jansen_coloc_loci_list$`jansen - expression_celltype_Monocyte_NS - BIN1`$locus_data
+
+loci_to_explore <- loci_to_explore %>% 
+  arrange(log_p_gwas) 
+
+bin1_p_plot <- loci_to_explore %>% 
+  ggplot(aes(x = log_p_eqtl, y = log_p_gwas, colour = genome_wide_signif)) +
+  geom_point(size = 1.2, alpha = 1, shape = 16) +
+   scale_colour_manual(values = my_palette) +
+  scale_fill_gradient(low = "grey80", high = "darkslategrey", limits = locus_p_value_limits) +
+    ggpubr::stat_cor(method = "pearson",  colour = "black", size = 4) +
+  theme_aw +
+    labs(x = "Multi-ancestry eQTL \n-log10(p-value)", 
+         y = "European AD GWAS \n-log10(p-value)",
+          colour = "Significant GWAS SNP")
+  
+
+bin1_beta_plot <- loci_to_explore %>% 
+  dplyr::filter(beta_gwas < 1.5) %>% 
+  ggplot(aes(x = beta_eqtl, y = beta_gwas, colour = genome_wide_signif)) +
+   geom_point(size = 1.2, alpha = 1, shape = 16) +
+   geom_smooth(formula = y ~ x, method = "lm", level = 0.95, colour = "black", size = 0.5, fill = "#4DA2B7") +
+      ggpubr::stat_cor(method = "pearson",  colour = "black", size = 4) +
+    scale_colour_manual(values = my_palette) +
+  scale_fill_gradient(low = "grey80", high = "darkslategrey", limits = locus_p_value_limits) +
+    theme_aw +
+    labs(x = "Multi-ancestry eQTL \nbeta",
+         y = "European AD GWAS \nbeta",
+          colour = "Significant GWAS SNP") 
+
+
+
+
+bin1_jansen_aquino_locus_plot <- (bin1_p_plot + bin1_beta_plot) +
+  plot_layout(guides = "collect") &
+  theme(legend.position = "bottom")
+bin1_jansen_aquino_locus_plot
+
+
+ggsave(bin1_jansen_aquino_locus_plot,
+       file = file.path(base_dir, "figures/jansen_aquino_bin1_locus_plot.png"),
+       width = 18, height = 9, units = "cm")
+
+ggsave(bin1_jansen_aquino_locus_plot,
+       file = file.path(base_dir, "figures/jansen_aquino_bin1_locus_plot.pdf"),
+       width = 18, height = 9, units = "cm")
+
+```
+
+
+
+## East Asian AD GWAS (Shigemizu) and Multi-ancestry eQTL (Aquino)
+
+
+### Analysis
+
+The analysis was undertaken with the following script:
+
+
+```{r,  eval=F}
+source(here::here("r_scripts/02b_run_coloc_gwas_immune_aquino_shigemizu.R")
+```
+
+The results were then processed using the following script:
+
+```{r, eval=F}
+source(here::here("r_scripts",
+                  "03b_process_shigemizu_aquino_coloc_results.R")
+```
+
+
+### Results
+
+```{r, out.width= "70%"}
+ all_results <- readRDS(str_c(args$aquino_shigemizu_coloc_path, "/coloc_summary.Rds"))
+
+results <- all_results$liberal
+results <- results %>% 
+  separate(dataset, 
+           into = c("Eqtl_type", "Cell_resolution", "Cell_name", "Treatment"), 
+           sep = "_",
+           remove = F) %>% 
+  dplyr::mutate(significant = case_when(PP.H4.abf >=0.75 ~ "Colocalised",
+                                        PP.H3.abf >= 0.75 ~ "Distinct",
+                                        sum_PPH3_PPH4 >0.5 & 
+                                          ratio_PPH4_PPH3 > log2(9) & 
+                                          PP.H4.abf < 0.75 ~ "Suggestive",
+                                        TRUE ~ "Not_signif"),
+                Treatment = as_factor(Treatment) %>% fct_relevel(c("NS", "IAV", "COV")),
+                Cell_name = as_factor(Cell_name) %>% fct_relevel(aquino_cell_order)
+                ) %>% 
+  dplyr::filter(gene_name %in% AD_gene_list) 
+
+
+write_csv(results,
+          file = file.path(base_dir, "derived_data/shigemizu_aquino_AD_gene_results.csv"))
+
+NDD_gene_heatmap <- results %>% 
+  dplyr::filter(significant != "Not_signif",
+                Eqtl_type == "expression") %>% 
+  ggplot(aes(x = Treatment, y = fct_rev(Cell_name), fill = significant)) +
+  geom_tile() +
+  theme(panel.grid = element_blank(),
+        legend.position = "bottom") +
+  scale_fill_manual(values = my_palette) +
+  facet_grid(. ~gene_name, switch = "y") + 
+  labs(fill = NULL,
+       y = "Cell type")
+
+ggsave(NDD_gene_heatmap,
+       file = file.path(base_dir, "figures/Supp_Shigemizu_aquino_AD_genes.pdf"),
+       units = "cm", width = 12, height = 16)
+
+ggsave(NDD_gene_heatmap,
+       file = file.path(base_dir, "figures/Supp_Shigemizu_aquino_AD_genes.png"),
+       units = "cm", width = 12, height = 16)
+
+NDD_gene_heatmap +
+  labs(subtitle = "East Asian AD GWAS (Shigemizu) and Multi-ancestry eQTL (Aquino)")
+
+```
+
+
+
+
+
+
+# Colocalisation in Parkinson's disease
+
+
+## PD gene list
+
+```{r}
+PD_gene_df <- read_delim(args$PD_genes_file) %>% 
+  dplyr::filter(Confidence_as_actual_PD_gene %in% c("Very high", "High")) 
+
+PD_genes  <- tibble(disease = "PD",
+                               gene = c(PD_gene_df$`Empty Cell`, "RAB32")) 
+PD_gene_list <- PD_genes$gene %>%  unlist()
+
+PD_gene_list 
+```
+
+
+
+
+
+
+## West European GWAS (Nalls) and Multi ancestry eQTL (Aquino) 
+
+```{r}
+all_results <- readRDS(str_c(args$aquino_nalls_coloc_path, "/coloc_summary.Rds"))
+
+figures_path <- args$aquino_nalls_coloc_path
+```
+
+
+### Analysis
+
+The analysis was undertaken with the following script:
+
+
+```{r,  eval=F}
+source(here::here("r_scripts/02c_run_coloc_gwas_immune_aquino_nalls.R")
+```
+
+The results were then processed using the following script:
+
+```{r, eval=F}
+source(here::here("r_scripts",
+                  "03c_process_nalls_aquino_coloc_results.R")
+       
+```
+
+### Results
+
+```{r}
+all_results <- readRDS(str_c(args$aquino_nalls_coloc_path, "/coloc_summary.Rds"))
+
+results <- all_results$liberal
+results <- results %>% 
+  separate(dataset, 
+           into = c("Eqtl_type", "Cell_resolution", "Cell_name", "Treatment"), 
+           sep = "_",
+           remove = F) %>% 
+  dplyr::mutate(significant = case_when(PP.H4.abf >=0.75 ~ "Colocalised",
+                                        PP.H3.abf >= 0.75 ~ "Distinct",
+                                        sum_PPH3_PPH4 >0.5 & 
+                                          ratio_PPH4_PPH3 > log2(9) & 
+                                          PP.H4.abf < 0.75 ~ "Suggestive",
+                                        TRUE ~ "Not_signif"),
+                Treatment = as_factor(Treatment) %>% fct_relevel(c("NS", "IAV", "COV")),
+                Cell_name = as_factor(Cell_name) %>% fct_relevel(aquino_cell_order)
+                ) %>% 
+  dplyr::filter(gene_name %in% PD_gene_list) 
+
+
+
+write_csv(results,
+          file = file.path(base_dir, "derived_data/nalls_aquino_PD_gene_results.csv"))
+
+
+NDD_gene_heatmap <- results %>% 
+  dplyr::filter(significant != "Not_signif",
+                Eqtl_type == "expression") %>% 
+  ggplot(aes(x = Treatment, y = fct_rev(Cell_name), fill = significant)) +
+  geom_tile() +
+  theme(panel.grid = element_blank(),
+        legend.position = "bottom") +
+  scale_fill_manual(values = my_palette) +
+  facet_grid(. ~gene_name, switch = "y") + 
+  labs(fill = NULL,
+       y = "Cell type")
+
+ggsave(NDD_gene_heatmap,
+       file = file.path(base_dir, "figures/Supp_Nalls_aquino_PD_genes.pdf"),
+       units = "cm", width = 14, height = 16)
+
+ggsave(NDD_gene_heatmap,
+       file = file.path(base_dir, "figures/Supp_Nalls_aquino_PD_genes.png"),
+       units = "cm", width = 14, height = 16)
+
+NDD_gene_heatmap +
+  labs(subtitle = "West European GWAS (Nalls) and Multi ancestry eQTL (Aquino)")
+```
+
+
+
+
+
+### Genes to compare across ancestries
+```{r}
+
+cells_to_compare <-  c("Monocyte", "Mono-cd14", "Dendritic-plasmacytoid")
+eqtl_to_compare <- c("expression_subtype_Dendritic-plasmacytoid_NS", "expression_celltype_Monocyte_NS", "expression_subtype_Mono-cd14_NS", "expression_celltype_Monocyte_COV")
+genes_to_compare = c("LRRK2", "GBA", "SNCA")
+
+Nalls_aquino_genes_to_compare_results <- results %>% 
+  dplyr::filter(gene_name %in% genes_to_compare,
+                dataset %in% eqtl_to_compare,
+                  Eqtl_type == "expression")
+```
+
+
+### Analysis of LRRK2 locus
+```{r}
+
+
+# Functions
+find_coloc_results_paths <- function(directory_to_search, pattern_to_search = ".rda") {
+  #' Function that takes a directory output by colochelpR and searches within that directory and sub-directories for all files matching a pattern. It will output a dataframe with columns for: directory, file_name, gwas, eqtl, prior_type and gene.
+  #' @param directory_to_search parent directory to search within
+  #' @param pattern a string pattern to search in the parent directory and subdirectories
+  #' @return dataframe with columns for: directory, file_name, dataset, prior_type, and gene.
+  
+  results_dir <- tibble(file_path =  list.files(directory_to_search, recursive = T, full.names = T, pattern = pattern_to_search)) %>% 
+    dplyr::mutate(dir = file_path %>% 
+                    str_replace(., "/[^/]*$", "") %>% 
+                    str_replace(., "/[^/]*$", ""),
+                  file_name = basename(file_path) %>% 
+                    str_replace(., ".rda", ""),
+                  eqtl = basename(dir),
+                  gwas_path = dir %>% 
+                    str_replace(., "/[^/]*$", ""),
+                  gwas = basename(gwas_path),
+                  prior_type = file_path %>% 
+                    str_replace(., "/[^/]*$", "") %>% 
+                    basename(),
+                  gene = str_replace(file_name, ".+_(.*)", "\\1")
+    ) 
+  
+  return(results_dir)
+  
+}
+
+nalls_aquino_rda_list <- read_tsv(str_c(args$aquino_nalls_coloc_path, "/nalls_aquino_rda_list.txt"),
+                                  col_names = "file_path")
+
+results_dir <- nalls_aquino_rda_list %>% 
+   dplyr::mutate(dir = file_path %>% 
+                    str_replace(., "/[^/]*$", "") %>% 
+                    str_replace(., "/[^/]*$", ""),
+                  file_name = basename(file_path) %>% 
+                    str_replace(., ".rda", ""),
+                  eqtl = basename(dir),
+                  gwas_path = dir %>% 
+                    str_replace(., "/[^/]*$", ""),
+                  gwas = basename(gwas_path),
+                  prior_type = file_path %>% 
+                    str_replace(., "/[^/]*$", "") %>% 
+                    basename(),
+                  gene = str_replace(file_name, ".+_(.*)", "\\1")
+    ) %>% 
+    dplyr::filter(prior_type == "liberal")
+  
+
+loci_to_explore <- results %>% 
+  dplyr::filter(str_detect(Eqtl_type, "expression"),
+               gene_name %in% genes_to_compare,  #Filter to match the results we are exploring
+               dataset %in% eqtl_to_compare
+  )
+
+
+chromosome_lookup <- tibble(gene_name = c("SNCA", "LRRK2", "GBA"),
+                            chromosome = c("chr4", "chr12", "chr1")
+)
+
+
+# The aquino eqtls are divided by chromosome, so I will join the correct path from the aquino eqtl summary to the corresponding coloc result. This will allow loading of the original eqtl path to allow filtering by the SNP identifier (rsNumber for snps involved in that coloc.
+sig_coloc_files <- left_join(loci_to_explore,
+          results_dir,
+          by = c("gene_2" = "gene",
+                 "dataset" = "eqtl")
+          ) %>% 
+  left_join(.,
+            chromosome_lookup,  # Add in chromosomes of the different genes
+            by = "gene_name") %>% 
+  left_join(.,
+            eqtl_df %>% 
+              dplyr::select(eqtl_name, eqtl_chromosome, eqtl_path),
+            by = c("dataset" = "eqtl_name",
+                   "chromosome" = "eqtl_chromosome"))
+
+
+sig_coloc_files
+
+```
+
+
+
+```{r, eval=FALSE}
+nalls_coloc_loci_list <- list()
+
+# Load the original gwas
+gwas_path = args$nalls_tidy_varbeta
+gwas <- fread(gwas_path)
+
+for(i in 1:nrow(sig_coloc_files)){
+  
+
+  gwas_name = "nalls"
+  eqtl_name = sig_coloc_files$dataset[i]
+  coloc_results_path = file.path(base_dir, sig_coloc_files$file_path[i])
+  eqtl_path = sig_coloc_files$eqtl_path[i]
+  eqtl_path <- sub(".*SNCA/", str_c(base_dir, "/"), eqtl_path) # Replace anything before and including 'SNCA/' with the new base directory
+  gene_name = sig_coloc_files$gene_name[i]
+  chromosome_number <-  sig_coloc_files$chromosome[i]
+  coloc_significance = sig_coloc_files$significant[i]
+  coloc_locus = str_c(gwas_name, " - ", eqtl_name, " - ", gene_name)
+  coloc_label = str_c(gwas_name, " - ", eqtl_name, " - ", gene_name , " - ", coloc_significance)
+  
+  print(str_c("Locus number is: ", i))
+  print(str_c("Locus is: ", coloc_label))
+  print(eqtl_name)
+  
+
+# Load the original eqtl
+eqtl <- fread(eqtl_path)
+eqtl %<>% 
+  dplyr::mutate(eqtl_dataset = eqtl_name) %>% 
+  dplyr::select(eqtl_dataset,
+                gene,
+                SNP = rsID,
+                beta = slope,
+                se = slope_se,
+                p.value = pvalue,
+                Al1 = ALT,
+                Al2 = REF)
+
+# Load the coloc results for this loci - this command loads a data called 'coloc_results_annotated'
+load(coloc_results_path)
+
+# Select out SNPs to explore
+SNPS_to_explore <- coloc_results_annotated$results$snp
+
+
+gwas_snps <- gwas %>% 
+  dplyr::filter(SNP %in% SNPS_to_explore)
+
+eqtl_snps <- eqtl %>% 
+  dplyr::filter(SNP %in% SNPS_to_explore) %>% 
+  arrange(p.value) %>%  # Arrange rows within each SNP group by p-value
+  distinct(SNP, .keep_all = TRUE) %>%  # Keep the SNP entry with the lowest p value, as per the coloc analysis
+  ungroup() %>% 
+  arrange(SNP)
+
+
+
+
+
+message("Join eqtl with gwas and check direction")
+# Join the gwas and eqtl datasets - this is dorn using the colochelpr function which raises warnings if the datasets are not aligned properly.
+locus_gwas_qtl_overlap <- colochelpR::join_coloc_datasets(df1 = gwas_snps, 
+                                    df2 = eqtl_snps, 
+                                    harmonise = T) %>% 
+  arrange(SNP)
+
+
+
+data_to_plot <- locus_gwas_qtl_overlap %>% 
+  dplyr::select(SNP, gene = gene_2, tissue = eqtl_dataset_2, 
+                Al1_gwas = Al1_1, Al2_gwas = Al2_1, beta_gwas = beta_1, p_gwas = p.value_1, 
+                Al1_eqtl = Al1_2, Al2_eqtl = Al2_2, beta_eqtl = beta_2, p_eqtl = p.value_2) %>% 
+  dplyr::mutate(log_p_gwas = -log10(p_gwas),
+                log_p_eqtl = -log10(p_eqtl))
+
+# Check if Allele 1 and 2 match between datasets, by adding a column which will be TRUE if this is the case
+directionality_check <- 
+  data_to_plot %>% 
+  dplyr::mutate(matched_effect_and_alt_allele = case_when(Al1_gwas == Al1_eqtl & Al2_gwas == Al2_eqtl ~ TRUE,
+                                                          TRUE ~ FALSE),
+                swapped_effect_and_alt_allele = case_when(matched_effect_and_alt_allele == FALSE & Al1_gwas == Al2_eqtl & Al2_gwas == Al1_eqtl ~ TRUE,
+                                                          TRUE ~ FALSE))
+
+directionality_check %>% 
+  count(matched_effect_and_alt_allele,
+        swapped_effect_and_alt_allele)
+
+
+SNPs_to_exclude <- directionality_check %>%
+                             dplyr::filter(matched_effect_and_alt_allele == FALSE, swapped_effect_and_alt_allele== FALSE) %>%
+                             .[["SNP"]]
+
+SNPs_to_swap <- directionality_check %>% 
+                             dplyr::filter(matched_effect_and_alt_allele == FALSE, swapped_effect_and_alt_allele== TRUE) %>% 
+                             .[["SNP"]]
+
+harmonised_alleles <- 
+  data_to_plot %>% 
+  dplyr::filter(!SNP %in% SNPs_to_exclude) %>% 
+  dplyr::mutate(beta_2 = case_when(SNP %in% SNPs_to_swap ~ (-beta_eqtl),
+                                     TRUE ~ beta_eqtl),
+                Al1_eqtl = case_when(SNP %in% SNPs_to_swap ~ Al1_gwas,
+                                     TRUE ~ Al1_eqtl),
+                Al2_eqtl = case_when(SNP %in% SNPs_to_swap ~ Al2_gwas,
+                                     TRUE ~ Al2_eqtl))
+
+harmonised_alleles <- harmonised_alleles %>% 
+   dplyr::mutate(genome_wide_signif = case_when(p_gwas < 1e-5 | p_eqtl < 5e-8 ~ TRUE,
+                                               TRUE ~ FALSE) %>% 
+                   factor(., levels = c(TRUE, FALSE))) %>% 
+    arrange(log_p_gwas) 
+
+
+print("Creating plots") 
+
+
+
+
+
+p_plot <- harmonised_alleles %>% 
+  ggplot(aes(x = log_p_eqtl, y = log_p_gwas, colour = log_p_gwas)) +
+  geom_point(size = 0.7, alpha = 0.6) +
+   scale_colour_gradient(low = "grey80", high = "darkslategrey") +
+    ggpubr::stat_cor(method = "pearson", colour = "black", size = 4) +
+  theme_aw +
+    labs(x = "-log10(eQTL p-value)", 
+         y = "-log10(GWAS p-value)",
+          colour = "-log10(GWAS p-value)",
+         subtitle = coloc_label)
+  
+
+beta_plot <- harmonised_alleles %>% 
+  ggplot(aes(x = beta_eqtl, y = beta_gwas, colour = log_p_gwas)) +
+  geom_point(alpha = 0.6, size = 0.7) +
+    geom_smooth(formula = y ~ x, method = "lm", level = 0.99, colour = "black", size = 0.5, fill = "#4DA2B7") +
+      ggpubr::stat_cor(method = "pearson",  colour = "black", size = 4) +
+    scale_colour_gradient(low = "grey80", high = "darkslategrey") +
+    theme_aw +
+    labs(x = "eQTL beta",
+         y = "GWAS beta",
+          colour = "-log10(GWAS p-value)",
+         subtitle = coloc_label) 
+
+
+
+comparison_locus_plot <- ((p_plot + beta_plot)) +
+  plot_layout(guides = "collect") +
+  plot_annotation(subtitle = str_c("Coloc results: ", coloc_label), tag_levels = "A") &
+  theme(legend.position = "bottom")
+
+
+
+nalls_coloc_loci_list[[coloc_locus]] <- list(
+    locus_data = harmonised_alleles,
+    locus_plot = comparison_locus_plot)
+
+print("Locus complete")
+
+}
+
+saveRDS(nalls_coloc_loci_list,
+        file = file.path(base_dir, "processed_data/nalls_aquino/coloc/loci_SNCA_LRRK2_GBA.RDS"))
+
+
+```
+
+
+#### Figure exploring LRRK2 locus
+
+```{r}
+# Explore colocalised loci:
+locus_p_value_limits <- c(0, 15)
+
+nalls_coloc_loci_list <- readRDS(file.path(base_dir, "processed_data/nalls_aquino/coloc/loci_SNCA_LRRK2_GBA.RDS"))
+
+loci_to_explore <- nalls_coloc_loci_list$`nalls - expression_celltype_Monocyte_COV - LRRK2`$locus_data
+
+loci_to_explore <- loci_to_explore %>% 
+  arrange(log_p_gwas) 
+
+lrrk2_p_plot <- loci_to_explore %>% 
+  ggplot(aes(x = log_p_eqtl, y = log_p_gwas, colour = genome_wide_signif)) +
+  geom_point(size = 1.2, alpha = 1, shape = 16) +
+   scale_colour_manual(values = my_palette) +
+  scale_fill_gradient(low = "grey80", high = "darkslategrey", limits = locus_p_value_limits) +
+    ggpubr::stat_cor(method = "pearson",  colour = "black", size = 4) +
+  theme_aw +
+    labs(x = "Multi-ancestry eQTL \n-log10(p-value)", 
+         y = "European GWAS \n-log10(p-value)",
+          colour = "Significant GWAS SNP")
+  
+
+lrrk2_beta_plot <- loci_to_explore %>% 
+  dplyr::filter(beta_gwas < 1.5) %>% 
+  ggplot(aes(x = beta_eqtl, y = beta_gwas, colour = genome_wide_signif)) +
+   geom_point(size = 1.2, alpha = 1, shape = 16) +
+   geom_smooth(formula = y ~ x, method = "lm", level = 0.95, colour = "black", size = 0.5, fill = "#4DA2B7") +
+      ggpubr::stat_cor(method = "pearson",  colour = "black", size = 4) +
+    scale_colour_manual(values = my_palette) +
+  scale_fill_gradient(low = "grey80", high = "darkslategrey", limits = locus_p_value_limits) +
+    theme_aw +
+    labs(x = "Multi-ancestry eQTL \nbeta",
+         y = "European GWAS \nbeta",
+          colour = "Significant GWAS SNP") 
+
+
+
+
+lrrk2_nalls_aquino_locus_plot <- (lrrk2_p_plot + lrrk2_beta_plot) +
+  plot_layout(guides = "collect") &
+  theme(legend.position = "bottom")
+lrrk2_nalls_aquino_locus_plot
+
+
+ggsave(lrrk2_nalls_aquino_locus_plot,
+       file = file.path(base_dir, "figures/nalls_aquino_lrrk2_locus_plot_no_outliers.png"),
+       width = 18, height = 10, units = "cm")
+
+ggsave(lrrk2_nalls_aquino_locus_plot,
+       file = file.path(base_dir, "figures/nalls_aquino_lrrk2_locus_plot_no_outliers.pdf"),
+       width = 18, height = 10, units = "cm")
+
+```
+
+
+## East Asian PD GWAS (Foo) with multi-ancestry eQTL (Aquino)
+
+
+### Analysis
+
+The analysis was undertaken with the following script:
+
+
+```{r,  eval=F}
+source(here::here("r_scripts/02d_run_coloc_gwas_immune_aquino_foo.R")
+```
+
+The results were then processed using the following script:
+
+```{r, eval=F}
+source(here::here("r_scripts",
+                  "03d_process_foo_aquino_coloc_results.R")
+```
+
+### Results 
+
+```{r}
+all_results <- readRDS(str_c(args$aquino_foo_coloc_path, "/coloc_summary.Rds"))
+
+results <- all_results$liberal
+results <- results %>% 
+  separate(dataset, 
+           into = c("Eqtl_type", "Cell_resolution", "Cell_name", "Treatment"), 
+           sep = "_",
+           remove = F) %>% 
+  dplyr::mutate(significant = case_when(PP.H4.abf >=0.75 ~ "Colocalised",
+                                        PP.H3.abf >= 0.75 ~ "Distinct",
+                                        sum_PPH3_PPH4 >0.5 & 
+                                          ratio_PPH4_PPH3 > log2(9) & 
+                                          PP.H4.abf < 0.75 ~ "Suggestive",
+                                        TRUE ~ "Not_signif"),
+                Treatment = as_factor(Treatment) %>% fct_relevel(c("NS", "IAV", "COV")),
+                Cell_name = as_factor(Cell_name) %>% fct_relevel(aquino_cell_order)
+                ) %>% 
+  dplyr::filter(gene_name %in% PD_gene_list) 
+
+
+write_csv(results,
+          file = file.path(base_dir, "derived_data/foo_aquino_PD_gene_results.csv"))
+
+NDD_gene_heatmap <- results %>% 
+  dplyr::filter(significant != "Not_signif",
+                Eqtl_type == "expression") %>% 
+  ggplot(aes(x = Treatment, y = fct_rev(Cell_name), fill = significant)) +
+  geom_tile() +
+  theme(panel.grid = element_blank(),
+        legend.position = "bottom") +
+  scale_fill_manual(values = my_palette) +
+  facet_grid(. ~gene_name, switch = "y") + 
+  labs(fill = NULL,
+       y = "Cell type")
+
+ggsave(NDD_gene_heatmap,
+       file = file.path(base_dir, "figures/Supp_Foo_aquino_PD_genes.pdf"),
+       units = "cm", width = 12, height = 16)
+
+ggsave(NDD_gene_heatmap,
+       file = file.path(base_dir, "figures/Supp_Foo_aquino_PD_genes.png"),
+       units = "cm", width = 12, height = 16)
+
+NDD_gene_heatmap +
+  labs(subtitle = "East Asian PD GWAS (Foo) with multi-ancestry eQTL (Aquino)")
+
+```
+
+
+### Genes to compare across ancestries
+
+```{r}
+foo_aquino_genes_to_compare_results <- results %>% 
+  dplyr::filter(gene_name %in% genes_to_compare,
+                Cell_name %in% cells_to_compare,
+                  Eqtl_type == "expression")
+
+
+```
+.
+
+
+## East Asian GWAS (Foo) and East Asian eQTL (Ota)
+
+
+### Analysis
+
+The analysis was undertaken with the following script:
+
+
+```{r,  eval=F}
+source(here::here("r_scripts/02e_run_coloc_gwas_immune_asian_complete.R")
+```
+
+The results were then processed using the following script:
+
+```{r, eval=F}
+source(here::here("r_scripts",
+                  "03e_process_ota_immune_coloc_results_foo_complete.R")
+```
+
+
+
+
+### Results
+
+```{r}
+all_results <- readRDS(str_c(args$ota_foo_coloc_path, "/coloc_summary.Rds"))
+
+ota_cell_order <- c("mDC",
+                    "pDC",
+                    "CL_Mono",
+                    "NC_Mono",
+                    "CD16p_Mono",
+                    "Int_Mono",
+                    "Neu",
+                    "LDG",
+                    "NK",  
+                    "Naïve_CD4",
+                     "Th1",
+                    "Th2",
+                    "Th17",
+                    "Tfh",
+                    "Fr_I_nTreg",
+                    "Fr_II_eTreg",
+                    "Fr_III_T",
+                    "Naïve_CD8",
+                    "CM_CD8",
+                    "EM_CD8",
+                    "TEMRA_CD8",
+                    "Naïve_B",
+                    "USM_B",
+                    "SM_B",
+                     "DN_B",
+                    "Plasmablast"
+                   )                       
+
+
+results <- all_results$liberal
+results <- results %>% 
+  dplyr::mutate(significant = case_when(PP.H4.abf >=0.75 ~ "Colocalised",
+                                        PP.H3.abf >= 0.75 ~ "Distinct",
+                                        sum_PPH3_PPH4 >0.5 & 
+                                          ratio_PPH4_PPH3 > log2(9) & 
+                                          PP.H4.abf < 0.75 ~ "Suggestive",
+                                        TRUE ~ "Not_signif"),
+                dataset = as_factor(dataset) %>% fct_expand(ota_cell_order) %>% fct_relevel(ota_cell_order)
+                ) %>% 
+  dplyr::filter(gene_name %in% PD_gene_list) 
+
+
+write_csv(results,
+          file = file.path(base_dir, "derived_data/foo_ota_PD_gene_results.csv"))
+
+NDD_gene_heatmap <- results %>% 
+  dplyr::filter(significant != "Not_signif") %>% 
+  ggplot(aes(x = gene_name, y = fct_rev(dataset), fill = significant)) +
+  geom_tile() +
+  theme(panel.grid = element_blank(),
+        legend.position = "bottom") +
+  scale_fill_manual(values = my_palette) +
+#  facet_grid(. ~gene_name, switch = "y") + 
+  labs(fill = NULL,
+       y = "Cell type",
+       x = "Gene")
+
+ggsave(NDD_gene_heatmap,
+       file = file.path(base_dir, "figures/Supp_Foo_ota_PD_genes.pdf"),
+       units = "cm", width = 12, height = 16)
+
+ggsave(NDD_gene_heatmap,
+       file = file.path(base_dir, "figures/Supp_Foo_ota_PD_genes.png"),
+       units = "cm", width = 12, height = 16)
+
+NDD_gene_heatmap +
+  labs(subtitle = "East Asian GWAS (Foo) and East Asian eQTL (Ota)")
+
+```
+
+```{r, fig.width = 6, fig.height=10, out.width="70%"}
+ota_foo_lrrk2_snca_results <- results %>% 
+  dplyr::filter(dataset %in% c( "pDC", "mDC",   "CL_Mono", "CD16p_Mono")) %>% 
+  dplyr::mutate(eqtl_name = "Ota 2021",
+                dataset = fct_relevel(dataset, c( "pDC", "mDC",   "CL_Mono", "CD16p_Mono")))
+
+ota_foo_barchart <- ota_foo_lrrk2_snca_results %>%
+  dplyr::select(GWAS_1, eqtl_name, gene_name, dataset, PPH3 = PP.H3.abf, PPH4 = PP.H4.abf) %>%
+  pivot_longer(c(PPH3, PPH4), names_to = "Hypothesis", values_to = "Posterior_value" ) %>%
+  ggplot(aes(x = dataset, y = Posterior_value, fill = Hypothesis)) +
+    geom_bar(stat = "identity", position  = "dodge") +
+  scale_fill_manual(values = my_palette) +
+  scale_x_discrete(labels = plot_labels) +
+  geom_hline(aes(yintercept = 0.75), colour = "grey10",  linetype = "dashed") +
+   facet_nested(gene_name ~ eqtl_name + GWAS_1,  
+               labeller = plot_labeller) +
+   theme_aw +
+  theme(legend.position = "bottom",
+        strip.background.x  = element_rect(color="black", linewidth=1, linetype="solid")) +
+  labs(x = "Cell type", y = "Coloc posterior value")
+
+ota_foo_barchart
+
+```
+
+
+
+### Explore SNCA locus
+
+
+#### Identify raw results of significance
+```{r, eval = F}
+
+# Function
+find_coloc_results_paths <- function(directory_to_search, pattern_to_search = ".rda") {
+  #' Function that takes a directory output by colochelpR and searches within that directory and sub-directories for all files matching a pattern. It will output a dataframe with columns for: directory, file_name, gwas, eqtl, prior_type and gene.
+  #' @param directory_to_search parent directory to search within
+  #' @param pattern a string pattern to search in the parent directory and subdirectories
+  #' @return dataframe with columns for: directory, file_name, dataset, prior_type, and gene.
+  
+  results_dir <- tibble(file_path =  list.files(directory_to_search, recursive = T, full.names = T, pattern = pattern_to_search)) %>% 
+    dplyr::mutate(dir = file_path %>% 
+                    str_replace(., "/[^/]*$", "") %>% 
+                    str_replace(., "/[^/]*$", ""),
+                  file_name = basename(file_path) %>% 
+                    str_replace(., ".rda", ""),
+                  eqtl = basename(dir),
+                  gwas_path = dir %>% 
+                    str_replace(., "/[^/]*$", ""),
+                  gwas = basename(gwas_path),
+                  prior_type = file_path %>% 
+                    str_replace(., "/[^/]*$", "") %>% 
+                    basename(),
+                  gene = str_replace(file_name, ".+_(.*)", "\\1")
+    ) 
+  
+  return(results_dir)
+  
+}
+
+
+# Filter significant results:
+coloc_PPH4 <- results %>% 
+  dplyr::filter(PP.H4.abf >= 0.75) %>% 
+  dplyr::rename(hgnc_symbol = gene_name)
+
+results_dir <- find_coloc_results_paths(directory_to_search = args$ota_foo_coloc_path, pattern_to_search = ".rda") 
+
+coloc_files <- results_dir %>% 
+  dplyr::filter(prior_type == "liberal") %>%  #Filter to match the results we are exploring
+  dplyr::inner_join(.,
+                    coloc_PPH4,
+                    c("gene" = "gene_2",
+                      "eqtl" = "dataset")) %>% 
+  dplyr::arrange(hgnc_symbol) %>% 
+  dplyr::rename("dataset" = "eqtl")
+```
+
+#### Compare p values and betas
+
+```{r, eval = F}
+
+# Generate p value and beta comparison plots
+
+gwas <- fread(args$foo_tidy_gwas_path)
+
+coloc_list <- list()
+
+for(i in 1:nrow(coloc_files)){
+  
+
+  
+  dataset = coloc_files$dataset[i]
+  gene_name = coloc_files$hgnc_symbol[i]
+  coloc_locus = str_c(dataset, "-", gene_name)
+  
+  print(str_c("Locus number is: ", i))
+  print(str_c("Locus is: ", coloc_locus))
+  
+# Load the original eqtl
+eqtl_path = str_c(args$eqtl_raw_data_dir, "/",  dataset, "_nominal.txt")
+eqtl <- fread(eqtl_path)
+
+print("Filtering eqtl")
+
+eqtl_tidy_gene_filtered <- 
+  eqtl %>% # Tidy eqtl as per when coloc is run, but without including mafs or varbeta as these are not required.
+  dplyr::filter(Gene_name == gene_name)    %>%  # Find only the significant genes in the eqtl of interest
+  dplyr::filter(nchar(REF) == 1,  # Remove the SNPs in the eqtl that are insertions/deletions (ie not true SNPs)
+                nchar(ALT) == 1) %>% 
+  dplyr::mutate(eqtl_dataset =  dataset,
+                CHR = str_replace(CHR, "chr", ""), # Convert to ensembl chr format
+                SNP = str_c(CHR, "_", Variant_position_start),
+                beta = `slope(ALT)`) %>%   
+  dplyr::select(eqtl_dataset,
+                gene = Gene_id,
+                SNP,
+                CHR,
+                pos = Variant_position_start,
+                beta,
+                p.value = nominal_P_value,
+                Al1 = ALT,
+                Al2 = REF,
+                Gene_name) %>% 
+  dplyr::filter(beta != 0) %>%
+  colochelpR::check_coloc_data_format(.,
+                                      beta_or_pval = "pval",
+                                      check_maf = F) %>% 
+  dplyr::distinct(SNP, .keep_all = T) 
+
+
+print("Join eqtl with gwas and check direction")
+locus_gwas_qtl_overlap <- colochelpR::join_coloc_datasets(df1 = gwas, # Join the gwas and eqtl datasets - this is down using the colochelpr function which raises warnings if the datasets are not aligned properly.
+                                    df2 = eqtl_tidy_gene_filtered, 
+                                    harmonise = F)
+
+data_to_plot <- locus_gwas_qtl_overlap %>% 
+  dplyr::select(SNP, gene = Gene_name_2, tissue = eqtl_dataset_2, 
+                Al1_gwas = Al1_1, Al2_gwas = Al2_1, beta_gwas = beta_1, p_gwas = p.value_1, 
+                Al1_eqtl = Al1_2, Al2_eqtl = Al2_2, beta_eqtl = beta_2, p_eqtl = p.value_2) %>% 
+  tidyr::separate(col = "SNP", into = c("chr", "pos"), sep = "_", remove = F) %>% 
+  dplyr::mutate(pos_MB = as.numeric(pos)/1000000,
+                log_p_gwas = -log10(p_gwas),
+                log_p_eqtl = -log10(p_eqtl))
+
+# Check if Allele 1 and 2 match between datasets, by adding a column which will be TRUE if this is the case
+directionality_check <- 
+  data_to_plot %>% 
+  dplyr::mutate(matched_effect_and_alt_allele = case_when(Al1_gwas == Al1_eqtl & Al2_gwas == Al2_eqtl ~ TRUE,
+                                                          TRUE ~ FALSE),
+                swapped_effect_and_alt_allele = case_when(matched_effect_and_alt_allele == FALSE & Al1_gwas == Al2_eqtl & Al2_gwas == Al1_eqtl ~ TRUE,
+                                                          TRUE ~ FALSE))
+
+
+
+directionality_check %>% 
+  count(matched_effect_and_alt_allele)
+
+directionality_check %>% 
+  count(swapped_effect_and_alt_allele)
+
+
+SNPs_to_exclude <- directionality_check %>%
+                             dplyr::filter(matched_effect_and_alt_allele == FALSE, swapped_effect_and_alt_allele== FALSE) %>%
+                             .[["SNP"]]
+
+SNPs_to_swap <- directionality_check %>% 
+                             dplyr::filter(matched_effect_and_alt_allele == FALSE, swapped_effect_and_alt_allele== TRUE) %>% 
+                             .[["SNP"]]
+
+harmonised_alleles <- 
+  data_to_plot %>% 
+  dplyr::filter(!SNP %in% SNPs_to_exclude) %>% 
+  dplyr::mutate(beta_2 = case_when(SNP %in% SNPs_to_swap ~ (-beta_eqtl),
+                                     TRUE ~ beta_eqtl),
+                Al1_eqtl = case_when(SNP %in% SNPs_to_swap ~ Al1_gwas,
+                                     TRUE ~ Al1_eqtl),
+                Al2_eqtl = case_when(SNP %in% SNPs_to_swap ~ Al2_gwas,
+                                     TRUE ~ Al2_eqtl))
+
+harmonised_alleles <- harmonised_alleles %>% 
+   dplyr::mutate(genome_wide_signif = case_when(p_gwas < 1e-5 | p_eqtl < 5e-8 ~ TRUE,
+                                               TRUE ~ FALSE)) 
+print("Creating plots")
+
+p_plot <- harmonised_alleles %>% 
+  ggplot(aes(x = log_p_eqtl, y = log_p_gwas, colour = genome_wide_signif)) +
+  geom_point(size = 0.8, alpha = 0.3) +
+   scale_colour_manual(values = c("#888888", "#3B9AB2")) +
+    geom_hline(yintercept = -log10(5*10^-8), linetype = "dashed") +
+  geom_hline(yintercept = -log10(1e-5), linetype = "dashed", colour = "grey50") +
+  geom_vline(xintercept = -log10(5*10^-8), linetype = "dashed") +
+    ggpubr::stat_cor(method = "pearson", cor.coef.name = "rho", colour = "black", size = 4) +
+    labs(x = "-log10(eQTL p-value)", 
+         y = "-log10(GWAS p-value)",
+          colour = "Significant in GWAS or eQTL")
+  
+
+beta_plot <- harmonised_alleles %>% 
+  ggplot(aes(x = beta_eqtl, y = beta_gwas, colour = genome_wide_signif)) +
+  geom_point(alpha = 0.3, size = 0.8) +
+    geom_smooth(formula = y ~ x, method = "lm", level = 0.99, colour = "black", size = 0.5, fill = "#4DA2B7") +
+      ggpubr::stat_cor(method = "pearson", cor.coef.name = "rho", colour = "black", size = 4) +
+    scale_colour_manual(values = c("#888888", "#3B9AB2")) +
+    labs(x = str_c("eQTL Beta - ",  dataset),
+         y = "GWAS beta",
+          colour = "Significant in GWAS or eQTL") 
+  
+locus_plot <- (p_plot + beta_plot) +
+  plot_layout(guides = "collect") +
+  plot_annotation(title = str_c("Coloc results: ", dataset, " - ", gene_name))
+
+print("Saving data")
+
+ggsave(locus_plot,
+       file = str_c(figures_path, "/summary_figures/", coloc_locus, ".png"),
+       device = "png",
+       width = 22, height = 12, units = "cm")
+
+coloc_list[[coloc_locus]] <- list(
+    locus_data = harmonised_alleles,
+    locus_plot = locus_plot)
+
+print("Locus complete")
+
+
+}
+
+saveRDS(coloc_list,
+        file = file.path(base_dir, "processed_data/ota_foo_complete/coloc/p_beta_comparisons.Rds"))
+
+```
+
+
+#### SNCA in CD16+ monocytes
+```{r}
+
+
+# Load pre-run coloc summary list
+coloc_list <- readRDS(file = file.path(base_dir, "processed_data/ota_foo_complete/coloc/p_beta_comparisons.Rds"))
+
+loci_to_explore <- coloc_list$`CD16p_Mono-SNCA`$locus_data
+
+loci_to_explore <- loci_to_explore %>% 
+  arrange(log_p_gwas) %>% 
+  mutate(genome_wide_signif = fct_relevel(as.factor(genome_wide_signif), c("TRUE", "FALSE")))
+
+snca_p_plot <- loci_to_explore %>% 
+  ggplot(aes(x = log_p_eqtl, y = log_p_gwas, colour = genome_wide_signif)) +
+  geom_point(size = 1.2, alpha = 1, shape = 16) +
+   scale_colour_manual(values = my_palette) +
+  scale_fill_gradient(low = "grey85", high = "darkslategrey", limits = locus_p_value_limits) +
+    ggpubr::stat_cor(method = "pearson",  colour = "black", size = 4) +
+  theme_aw +
+    labs(x = "-log10(Asian eQTL p-value)", 
+         y = "-log10(Asain GWAS p-value)",
+          colour = "Significant GWAS p-value")
+  
+
+snca_beta_plot <- loci_to_explore %>% 
+  ggplot(aes(x = beta_eqtl, y = beta_gwas, colour = genome_wide_signif)) +
+  geom_point(alpha = 1, size = 1.2, shape = 16) +
+    geom_smooth(formula = y ~ x, method = "lm", level = 0.99, colour = "black", size = 0.5, fill = "#4DA2B7") +
+      ggpubr::stat_cor(method = "pearson", colour = "black", size = 4) +
+    scale_colour_manual(values = my_palette) +
+  scale_fill_gradient(low = "grey85", high = "darkslategrey", limits = locus_p_value_limits) +
+    theme_aw +
+    labs(x = "Asian eQTL beta",
+         y = "Asian GWAS beta",
+          colour = "Significant GWAS p-value") 
+
+
+snca_foo_ota_locus_plot <- (snca_p_plot + snca_beta_plot) +
+  plot_layout(guides = "collect") &
+  theme(legend.position = "bottom")
+snca_foo_ota_locus_plot
+```
+
+#### SNCA in myeloid dendritic cells
+```{r}
+
+loci_to_explore <- coloc_list$`mDC-SNCA`$locus_data
+
+loci_to_explore <- loci_to_explore %>% 
+  arrange(log_p_gwas) %>% 
+  mutate(genome_wide_signif = fct_relevel(as.factor(genome_wide_signif), c("TRUE", "FALSE")))
+
+snca_p_plot <- loci_to_explore %>% 
+  ggplot(aes(x = log_p_eqtl, y = log_p_gwas, colour = genome_wide_signif)) +
+  geom_point(size = 1.2, alpha = 1, shape = 16) +
+   scale_colour_manual(values = my_palette) +
+  scale_fill_gradient(low = "grey85", high = "darkslategrey", limits = locus_p_value_limits) +
+    ggpubr::stat_cor(method = "pearson",  colour = "black", size = 4) +
+  theme_aw +
+    labs(x = "-log10(Asian eQTL p-value)", 
+         y = "-log10(Asain GWAS p-value)",
+          colour = "Significant GWAS p-value")
+  
+
+snca_beta_plot <- loci_to_explore %>% 
+  ggplot(aes(x = beta_eqtl, y = beta_gwas, colour = genome_wide_signif)) +
+  geom_point(alpha = 1, size = 1.2, shape = 16) +
+    geom_smooth(formula = y ~ x, method = "lm", level = 0.99, colour = "black", size = 0.5, fill = "#4DA2B7") +
+      ggpubr::stat_cor(method = "pearson", colour = "black", size = 4) +
+    scale_colour_manual(values = my_palette) +
+  scale_fill_gradient(low = "grey85", high = "darkslategrey", limits = locus_p_value_limits) +
+    theme_aw +
+    labs(x = "Asian eQTL beta",
+         y = "Asian GWAS beta",
+          colour = "Significant GWAS p-value") 
+
+
+snca_foo_ota_locus_plot <- (snca_p_plot + snca_beta_plot) +
+  plot_layout(guides = "collect") &
+  theme(legend.position = "bottom")
+snca_foo_ota_locus_plot
+```
+
+
+
+## African PD GWAS (Rizig) with Multi-ancestry eQTL (Aquino)
+
+
+### Analysis
+
+The analysis was undertaken with the following script:
+
+
+```{r,  eval=F}
+source(here::here("r_scripts/02f_run_coloc_gwas_immune_aquino_rizig.R")
+```
+
+The results were then processed using the following script:
+
+```{r, eval=F}
+source(here::here("r_scripts",
+                  "03f_process_rizig_aquino_coloc_results.R")
+```
+
+
+### Results
+
+```{r, out.width="50%"}
+all_results <- readRDS(str_c(args$aquino_rizig_coloc_path, "/coloc_summary.Rds"))
+
+
+results <- all_results$liberal
+results <- results %>% 
+  separate(dataset, 
+           into = c("Eqtl_type", "Cell_resolution", "Cell_name", "Treatment"), 
+           sep = "_",
+           remove = F) %>% 
+  dplyr::mutate(significant = case_when(PP.H4.abf >=0.75 ~ "Colocalised",
+                                        PP.H3.abf >= 0.75 ~ "Distinct",
+                                        sum_PPH3_PPH4 >0.5 & 
+                                          ratio_PPH4_PPH3 > log2(9) & 
+                                          PP.H4.abf < 0.75 ~ "Suggestive",
+                                        TRUE ~ "Not_signif"),
+                Treatment = as_factor(Treatment) %>% fct_relevel(c("NS", "IAV", "COV")),
+                Cell_name = as_factor(Cell_name) %>% fct_relevel(aquino_cell_order)
+                ) %>% 
+  dplyr::filter(gene_name %in% PD_gene_list) 
+
+
+write_csv(results,
+          file = file.path(base_dir, "derived_data/rizig_aquino_PD_gene_results.csv"))
+
+NDD_gene_heatmap <- results %>% 
+  dplyr::filter(significant != "Not_signif",
+                Eqtl_type == "expression") %>% 
+  ggplot(aes(x = Treatment, y = fct_rev(Cell_name), fill = significant)) +
+  geom_tile() +
+  theme(panel.grid = element_blank(),
+        legend.position = "bottom") +
+  scale_fill_manual(values = my_palette) +
+  facet_grid(. ~gene_name, switch = "y") + 
+  labs(fill = NULL,
+       y = "Cell type")
+
+ggsave(NDD_gene_heatmap,
+       file = file.path(base_dir, "figures/Supp_Rizig_aquino_PD_genes.pdf"),
+       units = "cm", width = 12, height = 16)
+
+ggsave(NDD_gene_heatmap,
+       file = file.path(base_dir, "figures/Supp_Rizig_aquino_PD_genes.png"),
+       units = "cm", width = 12, height = 16)
+
+NDD_gene_heatmap +
+  labs(subtitle = "African PD GWAS (Rizig) with Multi-ancestry eQTL (Aquino)")
+
+
+
+
+```
+
+
+
+## African PD GWAS (Rizig) and African eQTL (Nedelec/Quach)
+
+
+### Analysis
+
+The analysis was undertaken with the following script:
+
+
+```{r analysis-script_nalls, eval=F}
+source(file.path(base_dir, "r_scripts/02g_run_coloc_gwas_immune_african.R"))
+source(file.path(base_dir, "r_scripts/02g_ii_run_coloc_gwas_immune_african.R"))
+```
+
+The results were then processed using the following script:
+
+```{r processing-script_nalls, eval=F}
+source(file.path(base_dir, "r_scripts",
+                  "process_rizig_immune_coloc")
+```
+
+### Results
+
+```{r}
+all_results <- readRDS(str_c(args$rizig_nedelec_quach_coloc_path, "/coloc_summary.Rds"))
+
+results <- all_results$liberal
+results <- results %>% 
+  dplyr::mutate(significant = case_when(PP.H4.abf >=0.75 ~ "Colocalised",
+                                        PP.H3.abf >= 0.75 ~ "Distinct",
+                                        sum_PPH3_PPH4 >0.5 & 
+                                          ratio_PPH4_PPH3 > log2(9) & 
+                                          PP.H4.abf < 0.75 ~ "Suggestive",
+                                        TRUE ~ "Not_signif"),
+                ) %>% 
+  dplyr::filter(gene_name %in% PD_gene_list) 
+
+
+write_csv(results,
+          file = file.path(base_dir, "derived_data/rizig_nedelecQuach_PD_gene_results.csv"))
+
+
+```
+
+There are no colocalised, distinct or suggestive results.
+
+
+# Compile Figure 2
+
+
+
+## Compare multi-ancestry eQTL (Aquino) at LRRK2, SNCA with European (Nalls) and East Asian (Foo) GWAS
+```{r, fig.height = 8, fig.width=8}
+ancestry_results <- bind_rows(Nalls_aquino_genes_to_compare_results, foo_aquino_genes_to_compare_results) %>% 
+    filter((Treatment == "NS" & Cell_name %in% c("Monocyte", "Mono-cd14", "Dendritic-plasmacytoid")) |
+         (Treatment == "COV" & Cell_name == "Monocyte")) %>% 
+  dplyr::mutate(cell_treatment = str_c(Cell_name, "_", Treatment) %>% 
+                as_factor() %>% 
+                  fct_relevel(., c("Dendritic-plasmacytoid_NS", "Monocyte_NS", "Mono-cd14_NS" ,"Monocyte_COV")),
+                GWAS_1 = as_factor(GWAS_1) %>% fct_relevel(., c("PD2019_ex23andMe", "foo2020", "rizig2023")),
+                gene_name = fct_relevel(gene_name, c("LRRK2", "SNCA", "GBA")),
+                eqtl_name = "Aquino 2023"
+  ) %>% 
+  dplyr::filter(gene_name != 'GBA')
+
+
+
+
+aquino_barchart <- ancestry_results %>%
+  dplyr::select(GWAS_1, Eqtl_type, gene_name, Cell_resolution, Cell_name, cell_treatment, Treatment, PPH3 = PP.H3.abf, PPH4 = PP.H4.abf, eqtl_name) %>%
+  pivot_longer(c(PPH3, PPH4), names_to = "Hypothesis", values_to = "Posterior_value" ) %>%
+  ggplot(aes(x = cell_treatment, y = Posterior_value, fill = Hypothesis)) +
+    geom_bar(stat = "identity", position = "dodge") +
+  scale_fill_manual(values = my_palette) +
+  scale_x_discrete(labels = plot_labels) +
+  geom_hline(aes(yintercept = 0.75), colour = "grey10",  linetype = "dashed") +
+  facet_nested(gene_name ~ eqtl_name + GWAS_1,  
+               labeller = plot_labeller) +
+  theme_aw +
+  theme(legend.position = "bottom",
+        strip.background.x  = element_rect(color="black", linewidth=1, linetype="solid")) +
+  labs(x = "Cell type", y = "Coloc posterior value")
+
+aquino_barchart
+
+```
+
+
+
+
+## Combine barcharts with locus analysis
+```{r, fig.width = 8, fig.height = 12}
+
+
+figure_2 <- ((aquino_barchart + labs(x = NULL) | ota_foo_barchart + labs(y = NULL, x = NULL)) + 
+  plot_layout(widths = c(2,1),
+              guides = "collect")) /
+  (( lrrk2_p_plot + labs(x = "-log10(p value)", y = "European GWAS \nMulti-ancestry eQTL \n\n-log10(p value)") | 
+       lrrk2_beta_plot + labs(x = "beta", y = "beta") )   / 
+      (snca_p_plot + labs(x = "-log10(p value)", y = "East Asian GWAS \nEast Asian eQTL \n\n-log10(p value)") | 
+         snca_beta_plot + labs(x = "beta", y = "beta")) +
+  plot_layout(guides = "collect")) +
+  plot_layout(heights = c(4,7)) +
+  plot_annotation(tag_levels = "a") &
+  theme(legend.position = "bottom")
+
+
+
+figure_2
+
+ggsave(figure_2, height = 30, width = 22, units = "cm",
+       file = file.path(base_dir, "figures/figure_2.pdf"))
+
+ggsave(figure_2, height = 30, width = 22, units = "cm",
+       file = file.path(base_dir, "figures/figure_2.png"))
+
+
+```
+
+
+```{r}
+sessionInfo()
+```
+
