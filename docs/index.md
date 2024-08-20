@@ -1,6 +1,4 @@
 
-# Peripheral immune cells contribute to neurodegeneration in an ancestry specific manner
-
 ## Background
 
 This project explores whether peripheral immune cells mediate neurodegenerative diseases in an ancestry specific manner. It does this in 2 ways:
