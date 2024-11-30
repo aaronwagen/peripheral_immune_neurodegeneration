@@ -38,6 +38,7 @@ library(scales)
 library(tidyverse) # For tidy manipulation of data
 library(dplyr)
 library(gt)
+library(httr)
 
 
 
@@ -105,10 +106,10 @@ pre {
 ```{r}
 
 # Choose working location as jane or nemo
-location <- "nemo" 
+location <- "jane" 
 
 if (location == "jane") {
-  base_dir <- "/Volumes/lab-gandhis/home/users/wagena/periph_immune_neurodegen/"
+  base_dir <- "/Volumes/lab-gandhis/home/users/wagena/periph_immune_neurodegen_publication/"
 } else if (location == "nemo") {
   base_dir <- here::here()
   options(bitmapType='cairo') # Add graphics device for nemo
@@ -136,7 +137,8 @@ args <- list(PD_genes_file = str_c(base_dir, "/derived_data/Blauendraat_lancetne
                                                  "chen_cell_2020",
                                                  "chen_cell_2020_study_subset_lookup_table.tsv"),
              gwas_summary_numbers =  file.path(base_dir, "raw_data/gwas_summary_numbers_supp_figure.csv"),
-             qtl_summary_numbers = file.path(base_dir, "raw_data/metadata_of_GWAS_QTL_included.csv")
+             qtl_summary_numbers = file.path(base_dir, "raw_data/metadata_of_GWAS_QTL_included.csv"),
+             gtex_gene_expression_per_tissue_file = file.path(base_dir, "raw_data/GTEx_Analysis_2017-06-05_v8_RNASeQCv1.1.9_gene_median_tpm.gct")
              
 )
 
@@ -174,7 +176,10 @@ plot_labels = c("PD2019_ex23andMe" = "European PD GWAS",
                 "T.CD8" = "CD8 T",
                 "NK" = "NK",
                 "MYELOID" = "MYELOID",
-                "B" = "B")
+                "B" = "B",
+                "true_result" = "True result", 
+                'all_gtex_genes' = "All genes", 
+                "brain_gtex_genes" = "Brain genes")
                 
 
 
@@ -212,7 +217,10 @@ my_palette <- c("Colocalised" = "darkslategrey",
              "Platelet count - negative β" = "indianred3",
              "Platelet count - positive β" = "indianred4",
              "Mean platelet volume - negative β" = "slateblue2",
-              "Mean platelet volume - positive β" = "darkslateblue")
+              "Mean platelet volume - positive β" = "darkslateblue",
+             "true_result" = "darkslategrey",
+             'all_gtex_genes' = "indianred4", 
+             "brain_gtex_genes" = "indianred3")
 
 
 
@@ -230,9 +238,12 @@ my_palette <- c("Colocalised" = "darkslategrey",
 The PD genes of interest come from [Blaundraat Lancet Neurology 2020](<https://doi.org/10.1016/S1474-4422(19)30287-X>) table 1, using only the 14 genes that have high or very high confidence of being an actual PD gene (as defined by the authors).
 
 ```{r}
-PD_gene_df <- read_delim(args$PD_genes_file ) %>% 
-  dplyr::filter(Confidence_as_actual_PD_gene %in% c("Very high", "High")) %>% 
-  dplyr::rename(Gene = `Empty Cell`)
+PD_gene_df <- read_delim(args$PD_genes_file) %>% 
+    dplyr::filter(Confidence_as_actual_PD_gene %in% c("Very high", "High")) %>% 
+    dplyr::rename(Gene = `Empty Cell`) #%>% 
+    # dplyr::mutate(Gene = dplyr::case_when(
+    # Gene == "GBA" ~ "GBA1",  # Replace "GBA" with the proper name, "GBA1"
+    # ))
 
  PD_genes <- tibble(disease = "PD",
                                gene = c(PD_gene_df$Gene, "RAB32")) # Remove KAT8 and CTSF as can't cherrypick here...
@@ -283,12 +294,48 @@ summary_gene_list <- summary_genes$gene %>% unlist()
 write_csv(summary_genes,
           file = file.path(base_dir, "figures/summary_genes_table.csv"))
 
+# # For thesis
+# # Define each vector of genes
+# AD_genes_vector <- AD_genes[["gene"]] %>% sort()
+# PD_genes_vector <- PD_genes[["gene"]] %>% sort()
+# FTD_genes_vector <- FTD_genes[["gene"]] %>% sort()
+# 
+# # Find the maximum length among the vectors
+# max_length <- max(length(AD_genes_vector), length(PD_genes_vector), length(FTD_genes_vector))
+# 
+# # Pad each vector with NA to match the maximum length
+# AD_genes_padded <- c(AD_genes_vector, rep(NA, max_length - length(AD_genes_vector))) 
+# PD_genes_padded <- c(PD_genes_vector, rep(NA, max_length - length(PD_genes_vector))) 
+# FTD_genes_padded <- c(FTD_genes_vector, rep(NA, max_length - length(FTD_genes_vector)))
+# 
+# # Combine the padded vectors into a tibble
+# summary_genes_for_thesis <- tibble(
+#   AD = AD_genes_padded,
+#   PD = PD_genes_padded,
+#   FTD = FTD_genes_padded
+# ) 
+# 
+# summary_genes_for_thesis %>% 
+#     write_csv(file = file.path(base_dir, "figures/summary_genes_for_thesis.csv"))
+# 
+# summary_genes_gt <- gt(summary_genes_for_thesis) %>% 
+#     sub_missing(missing_text = "") %>% 
+#     tab_style(
+#     style = cell_text(weight = "bold"),
+#     locations = cells_column_labels()
+#     )
+#     
+# summary_genes_gt %>% 
+#     gtsave(filename = file.path(base_dir, "figures/summary_genes_gt.png"))
+
+
+
 summary_genes <- read_csv(file = file.path(base_dir, "figures/summary_genes_table.csv")) %>% 
   as_tibble()
 
 summary_genes %>% 
   count(disease) %>% 
-  rename(`Number of genes` = n) %>% 
+  dplyr::rename(`Number of genes` = n) %>% 
   gt()
 ```
 
@@ -372,6 +419,11 @@ eqtl_combined_studies_plot <- (individuals_plot | celltypes_plot | ethnicity_plo
 # Print the combined plot
 eqtl_combined_studies_plot
 
+ggsave(eqtl_combined_studies_plot,
+       file = file.path(base_dir, "figures/eqtl_datasets_summary.pdf"),
+              units = "cm",
+       height = 16,
+       width = 12)
 
 
 ```
@@ -384,20 +436,15 @@ gwas_studies <-  read_csv(args$gwas_summary_numbers) %>%
   dplyr::mutate(Study = fct_relevel(Study,  c("Foo_2020",  "Nalls_2020", "Rizig_2023", "Jansen_2019", "Shigemizu_2021")))
 
 
-
-
-
 # Transform Stimulation into a factor with levels for better control in plotting
 gwas_studies$Ancestry <- factor(gwas_studies$Ancestry)
-
-
 
 
 
 # Separate the metrics into individual plots with specific aesthetics
 individuals_plot <- ggplot(gwas_studies, aes(x = "N_cases", y = fct_rev(Study))) +
   geom_point(aes(size = N_cases), colour = "darkslategrey") +  # Circle shape
-  scale_size_continuous(range = c(1, 8), name = "N cases") +
+  scale_size_continuous(range = c(0.5, 4), name = "N cases") +
   theme_minimal() +
   theme(axis.ticks.y = element_blank(),
         axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1),
@@ -436,6 +483,12 @@ gwas_combined_studies_plot <- (individuals_plot | celltypes_plot | ethnicity_plo
 
 # Print the combined plot
 gwas_combined_studies_plot
+
+ggsave(gwas_combined_studies_plot,
+       file = file.path(base_dir, "figures/gwas_datasets_summary.pdf"),
+       units = "cm",
+       height = 16,
+       width = 12)
 
 ```
 
@@ -533,28 +586,33 @@ gene_expressed_in_data <- summary_genes %>%
 gene_expressed_in_data %>% 
   gt() %>% 
   opt_interactive()
+
 ```
 
 ## The instances of genes expressed per disease
+
+
 ```{r}
 aquino_gene_count_data <- gene_expressed_in_data %>% 
   count(disease, genes_in_aquino) 
 
 aquino_gene_count <- aquino_gene_count_data %>% 
-  ggplot(aes(x = disease, y = n, fill = fct_rev(genes_in_aquino))) +
+  ggplot(aes(x = n, y = fct_rev(disease), fill = fct_rev(genes_in_aquino))) +
   geom_bar(stat = "identity", position = "stack") +
-  scale_fill_manual(values = my_palette) +
-  labs(x = NULL, y = "Number of genes", fill = NULL) +
+  scale_fill_manual(values = my_palette,
+                       guide = guide_legend(reverse = TRUE)) +
+  labs(x = "Number of genes", y = NULL, fill = NULL) +
   theme_aw +
-  theme(legend.position = "bottom")
+  theme(legend.position = "bottom", 
+        panel.grid.major.x = element_line(),
+        panel.grid.major.y = element_blank()
+  )
+        
 
 aquino_gene_count
 
 ```
 
-## Enrichment of NDD genes in peripheral immune cells verse other genes
-
-To compare whether NDD genes are enriched in peripheral immune cells, compared to other genes. Wi relative to the median expression of genes expressed in GTEX 
 
 
 
@@ -616,10 +674,24 @@ substudy_info <- read_delim(args$chen_2020_substudy_lookup_table_path) %>%
                 associationCount,
                 summaryStatistics) %>% 
   extract(discoverySampleAncestry, into = c("N_participants", "Ancestry"), regex = "^([0-9]+)\\s(.+)$", remove = TRUE) %>% 
-  dplyr::mutate(N_participants  = as.numeric(N_participants)) %>% 
+  dplyr::mutate(N_participants = as.numeric(N_participants)) %>% 
   arrange(study_id) %>% 
   dplyr::select(-Trait, -N_participants)
-    
+
+included_chen_study_ids <- substudy_info %>% 
+    dplyr::filter(Ancestry %in% c("African American or Afro-Caribbean, African unspecified",
+                                  "European",
+                                  "East Asian",
+                                  "Hispanic or Latin American",
+                                  "South Asian",
+                                  "African American or Afro-Caribbean, African unspecified, European, East Asian, Hispanic or Latin American, South Asian")) %>% 
+    pull(study_id)
+
+saveRDS(included_chen_study_ids,
+        file = file.path(base_dir, "/derived_data/chen_derived_data/included_chen_study_ids.RDS"))
+
+
+substudy_info$Ancestry %>%  unique()
 
 opentargets <- left_join(opentargets,
                            substudy_info,
@@ -681,8 +753,12 @@ chen_association_count <- opentargets %>%
 
 
 ggsave(chen_association_count,
-       height = 26, width = 28, units = "cm",
+       height = 34, width = 32, units = "cm",
        file = file.path(base_dir, "figures/chen_wbc_mixed_association_counts.pdf"))
+
+ggsave(chen_association_count,
+       height = 34, width = 32, units = "cm",
+       file = file.path(base_dir, "figures/chen_wbc_mixed_association_counts.png"))
 
 
 chen_association_count 
@@ -716,16 +792,16 @@ expanded_table <- all_combinations %>%
             
 
 chen_gene_count_data <- expanded_table %>% 
-#  group_by(disease) %>% 
+  group_by(disease) %>% 
   mutate(Trait = str_wrap(Trait, width = 16)) %>%
   count(disease, Trait, genes_in_chen_relationship)  %>% 
   dplyr::group_by(disease, Trait) %>%
-  summarise(
+  dplyr::summarise(
     total = sum(n),  # Sum of all entries for each group
     `Blood count association` = sum(n[genes_in_chen_relationship == "Blood count association"]),
     `No association` = sum(n[genes_in_chen_relationship == "No association"])
   ) %>%
-  mutate(
+  dplyr::mutate(
     percent_blood_count_association = `Blood count association` / total * 100,
     percent_no_association = `No association` / total * 100
   )
@@ -819,12 +895,15 @@ aquino_cell_order <- tibble(Cell = c("cDC",
 
 # Convert the data to a long format
 long_data <- table_3c %>%
-  pivot_longer(
-    cols = -c(GeneID, Symbol),  # Excluding GeneID and Symbol columns from the pivot
-    names_to = c("Cell", "virus"),
-    names_sep = "_",  # Splitting based on the separator used in new column names
-    values_to = "log2TPM"
-  )
+    pivot_longer(
+        cols = -c(GeneID, Symbol),  # Excluding GeneID and Symbol columns from the pivot
+        names_to = c("Cell", "virus"),
+        names_sep = "_",  # Splitting based on the separator used in new column names
+        values_to = "log2TPM" 
+    ) %>% 
+    dplyr::mutate(log2TPM = as.numeric(log2TPM),
+                  TPM = 2^log2TPM)  # Reversing the log2 transformation to get the original TPM values
+
 
 filtered_data <- long_data %>%
   dplyr::filter(Symbol %in% summary_gene_list) %>%
@@ -834,13 +913,13 @@ filtered_data <- long_data %>%
   dplyr::left_join(.,
                    aquino_cell_order,
                    by = "Cell") %>%
-  dplyr::mutate(log2TPM = as.numeric(log2TPM),
+  dplyr::mutate(#log2TPM = as.numeric(log2TPM),
                 virus = fct_relevel(virus, c("NS", "IAV", "COV")),
                 Cell = fct_relevel(Cell, aquino_cell_order$Cell),
                 Lineage = fct_relevel(Lineage, aquino_cell_order$Lineage %>% unique())) %>%
   group_by(Symbol) %>%
   mutate(
-     TPM = 2^log2TPM,  # Reversing the log2 transformation to get the original TPM values
+   #  TPM = 2^log2TPM,  # Reversing the log2 transformation to get the original TPM values
     proportion_expression_per_gene = TPM / max(TPM)) %>%   # Calculating the proportion to allow comparison within a gene
   ungroup()
 
@@ -908,9 +987,755 @@ aquino_cell_expression_plot_max <- max_proportion_per_treatment_data  %>%
 aquino_cell_expression_plot_max
 ```
 
+## Enrichment of expression of NDD genes in peripheral cells, relative to random/brain related genes
+
+To explore whether NDD gene expression is enriched in peripheral immune cells (the Aquino dataset containing 12676 unique genes), relative to either a random set of all gtex genes (56200 genes), or cortical brain genes (29560 genes). This uses a summary of gene expression (median across samples) of tissues from GTEXv8. 
+
+```{r}
+gtex_gene_expression <- read_delim(args$gtex_gene_expression_per_tissue_file,
+                                   skip =2) %>% 
+    dplyr::select(gene = Name,
+                  symbol = Description,
+                  brain_cortex = `Brain - Cortex`) %>% 
+    dplyr::mutate(gene = str_remove(gene, "\\.[0-9]+$"),  # Remove the suffix from the gene ID from gtex
+                  symbol = str_trim(symbol),
+                  symbol = dplyr::case_when(
+                      symbol == "GBA1" ~ "GBA",
+                      symbol == "PARK2" ~ "PRKN",
+                      TRUE ~ symbol))  # Replace "GBA1" with the gene name used in Aquino, "GBA"
+
+
+# 1) Set up target genes
+# Get ENSG numbers of the 39 NDD genes from GTEX dataset
+NDD_geneID <- gtex_gene_expression %>% 
+    dplyr::filter(symbol %in% summary_gene_list) %>% 
+    dplyr::pull(gene) %>% sort()
+
+saveRDS(NDD_geneID,
+        file = file.path(base_dir, "/derived_data/NDD_ENSG_gene_ids.RDS"))
+
+NDD_geneID_in_aquino <- gtex_gene_expression %>% 
+    dplyr::filter(symbol %in% genes_in_aquino$gene) %>% 
+    dplyr::pull(gene) %>% sort()
+
+saveRDS(NDD_geneID_in_aquino,
+        file = file.path(base_dir, "/derived_data/NDD_ENSG_gene_ids_in_aquino.RDS"))
+        
+# Number of target genes
+target_genes <- NDD_geneID
+n_genes_tested <- length(target_genes)
+
+# Identify all the expressed aquino genes and number expressed
+expressed_target_genes <- genes_in_aquino$gene 
+n_aquino_target_genes_expressed <- length(expressed_target_genes)
+
+
+
+# 2) Set up aqiuno dataset
+aquino_data_filtered <- long_data %>% 
+     dplyr::select(GeneID, Symbol, Cell, virus, TPM)
+expressed_aquino_genes <- aquino_data_filtered$GeneID %>%  unique()
+m <- length(expressed_aquino_genes)
+
+# Set up backgrounds from GTEX
+# Create list of all 56200 gtex genes
+all_gtex_genes <- gtex_gene_expression %>% 
+    dplyr::pull(gene)
+
+saveRDS(all_gtex_genes,
+        file = file.path(base_dir, "/derived_data/gtex_all_ENSG_ids.RDS"))
+
+# Create list of 29560 brain gtex genes
+brain_gtex_genes <- gtex_gene_expression %>% 
+    dplyr::filter(brain_cortex >0) %>% 
+    dplyr::pull(gene)
+
+saveRDS(brain_gtex_genes,
+        file = file.path(base_dir, "/derived_data/gtex_brain_ENSG_ids.RDS"))
+
+enrichment_backgrounds <- list(all_gtex_genes = all_gtex_genes,
+                               brain_gtex_genes = brain_gtex_genes)
+
+
+
+
+# Initialize list to store results for each background
+results_list <- list()
+
+n_iterations = 1000
+
+ for (bg_name in names(enrichment_backgrounds)) {
+   # bg_name <- names(enrichment_backgrounds)[1]
+    gene_background <- enrichment_backgrounds[[bg_name]]
+    
+    # Background genes excluding target genes
+    background_only_genes <- setdiff(gene_background, target_genes)
+    n <- length(background_only_genes)
+    
+    # Set seed for reproducibility
+    set.seed(613)
+    
+    # Perform random sampling using replicate for efficiency
+    random_counts <- replicate(n_iterations, {
+      # Randomly sample genes from the background
+      random_sample <- sample(background_only_genes, size = n_genes_tested, replace = FALSE)
+      
+      # Count the number of sampled genes that are expressed
+      sum(random_sample %in% expressed_aquino_genes)
+    })
+    
+    # Median number of expressed genes in random samples
+    median_random_expressed <- median(random_counts)
+    
+    # Standard deviation
+    sd_random_expressed <- sd(random_counts)
+    
+    # 95% Confidence Interval
+    ci_lower <- quantile(random_counts, 0.025)
+    ci_upper <- quantile(random_counts, 0.975)
+    
+    # Empirical p-value
+    p_value_empirical <- sum(random_counts >= n_aquino_target_genes_expressed) / n_iterations
+    
+    # Hypergeometric test p-value
+    # Of the format: phyper(q, m, n, k, lower.tail = TRUE, log.p = FALSE), where:
+    #   q = number of target genes (successes) in a bootstrap sample, 
+    #   m is number of target genes in the background population,
+    #   n is the total size of the background population
+    #   k is the size of the sample
+    
+    k <- n_genes_tested # n is the size of the sample drawn
+    q <- n_aquino_target_genes_expressed # The number of successes in the current bootstrap sample
+    p_value_hyper <- phyper(q, m, n, k, lower.tail = FALSE)
+    
+    # Compile results into a dataframe
+    result_df <- tibble(
+        background = bg_name,
+        n_genes_tested = n_genes_tested,
+        n_target_genes_expressed = n_aquino_target_genes_expressed,
+        median_random_expressed = median_random_expressed,
+        sd_random_expressed = sd_random_expressed,
+        ci_lower = as.numeric(ci_lower),
+        ci_upper = as.numeric(ci_upper),
+        p_value_empirical = p_value_empirical,
+        p_value_hyper = p_value_hyper,
+        raw_values = list(random_counts)
+    )
+    
+    results_list[[bg_name]] <- result_df 
+    
+  }
+
+results_df <- do.call(rbind, results_list)
+
+gt(results_df)
+
+
+```
+
+
+```{r, fig.width = 8, fig.height = 6}
+# Summary dataframe for plotting
+# true_results <- tibble(background = "true_result",
+#               median_expression = n_aquino_target_genes_expressed,
+#               ci_lower = n_aquino_target_genes_expressed,
+#               ci_upper = n_aquino_target_genes_expressed)
+# 
+# enrichment_plot_data <- results_df %>% 
+#     dplyr::select(background, median_expression = median_random_expressed, ci_lower, ci_upper) %>% 
+#     bind_rows(true_results) %>% 
+#     dplyr::mutate(background = fct_relevel(background, c("true_result", 'all_gtex_genes', "brain_gtex_genes"))) 
+
+# enrichment_plot <- ggplot(enrichment_plot_data) +
+#     geom_pointrange(aes(x = "", y = median_expression, ymin = ci_lower, ymax = ci_upper, colour = background), 
+#                     position = position_dodge(width = 0.1)) +
+#     scale_colour_manual(values = my_palette,  labels = plot_labeller) +
+#     labs(x = NULL, y = "PIC-expressed genes", colour = NULL) +
+#     scale_y_continuous(breaks = c(10,20,30,39), limits = c(0,37.2)) +
+#     theme(axis.ticks.x = element_blank(),
+#           legend.direction = "vertical")
+# 
+# enrichment_plot
+
+enrichment_histogram_data <- results_df %>% 
+    unnest(cols = c(raw_values)) %>% 
+    dplyr::select(background, raw_values) 
+
+median_data <- enrichment_histogram_data %>%
+  group_by(background) %>%
+  summarize(
+    median_value = median(raw_values),
+    max_density = max(density(raw_values)$y)
+  )
+
+   
+enrichment_expression <- enrichment_histogram_data %>% 
+    ggplot(aes(x = raw_values, colour = background)) + 
+    geom_density(linewidth = 1.5, show.legend = FALSE) +
+    geom_vline(xintercept = 32, colour = "darkslategrey", linewidth = 1, linetype = "dashed") +
+    annotate("text", x = 32, y = Inf, size = 5, label = "\nExpressed genes", hjust = 1.1, angle= 90, colour = "darkslategrey") +
+    annotate("text", x = 16, y = 0.15, 
+             label = "p-value < 0.001", 
+             colour = "indianred4", size = 5) +
+    annotate("text", x = 24, y = 0.12,
+             label = "p-value < 0.001", 
+             colour = "indianred3", size = 5) +
+    scale_x_continuous(limits = c(0,39),
+                       breaks = c(0,10, 20, 30, 39)) +
+    scale_colour_manual(values = my_palette, labels = plot_labeller) +
+    labs(x = "Number of genes", y = "Density", colour = "Background") +
+    geom_segment(data = median_data, aes(x = median_value, 
+                                         xend =  median_value, 
+                                         colour = background,
+                                         y = 0, yend = max_density), 
+                 linetype = "dashed", linewidth = 1) +
+    guides(colour = guide_legend(override.aes = list(linetype = "solid", size = 1.5))) +
+    theme(legend.key = element_rect(fill = NA, color = NA),
+          panel.grid.major.x = element_line(),
+          panel.grid.major.y = element_blank(),
+          panel.grid.minor.y = element_blank()
+    )
+
+
+
+
+
+total_gene_counts <- gene_expressed_in_data %>% 
+    count(genes_in_aquino) %>% 
+    dplyr::mutate(disease = "Total")
+
+total_aquino_gene_count <- total_gene_counts %>% 
+    ggplot(aes(x = n, y = disease, fill = fct_rev(genes_in_aquino))) +
+    geom_bar(stat = "identity", position = "stack") +
+    scale_fill_manual(values = my_palette,
+                      guide = guide_legend(reverse = TRUE)) +
+    scale_x_continuous(limits = c(0,39),
+                       breaks = c(0, 10, 20, 30, 39)) +
+labs(x = "Number of genes", y = NULL, fill = NULL) +
+    theme_aw +
+    theme(legend.position = "bottom", 
+          panel.grid.major.x = element_line(),
+          panel.grid.major.y = element_blank()
+    )
+
+enrichment_plot <- (aquino_gene_count | 
+                  (
+                    (
+                      enrichment_expression + 
+                      labs(x = NULL) +
+                      theme(axis.text.x = element_blank())
+                    ) / 
+                    total_aquino_gene_count
+                  ) + 
+                  plot_layout(heights = c(6, 1))
+              ) + 
+              plot_layout(guides = "collect") +
+    plot_annotation(tag_levels = c("a", "b"))
+
+
+
+```
+
+
+```{r, fig.width = 12, fig.height = 6}
+
+enrichment_plot
+
+ggsave(enrichment_plot,
+       file = file.path(base_dir, "figures/thesis_gene_expression_enrichment.pdf"),
+       height = 14, width = 30, units = "cm")
+
+ggsave(enrichment_plot,
+       file = file.path(base_dir, "figures/thesis_gene_expression_enrichment.png"),
+       height = 14, width = 30, units = "cm")
+
+```
+
+#### Previous (discarded) enrichment approaches 
+
+```{r}
+# perform_enrichment_analysis <- function(celltype, virustype, target_genes, backgrounds, aquino_data, n_iterations = 1000, seed = 613) {
+# 
+#   # Select the subset of aquino_data for the given celltype and virustype
+#   aquino_subset <- aquino_data %>%
+#     dplyr::filter(Cell == celltype, virus == virustype) %>%
+#     dplyr::select(gene = GeneID, value = TPM)
+# 
+#   # Number of target genes
+#   n_genes_tested <- length(target_genes)
+# 
+#   # Identify expressed target genes and number expressed
+#   expressed_target_genes <- intersect(target_genes, aquino_subset$gene)
+#   n_target_genes_expressed <- length(expressed_target_genes)
+# 
+#   # Total number of expressed genes in aquino_subset
+#   expressed_genes <- aquino_subset$gene
+#   M <- length(expressed_genes)
+# 
+#   # Initialize list to store results for each background
+#   results_list <- list()
+# 
+#   # Loop over each background
+#   for (bg_name in names(backgrounds)) {
+#    # bg_name <- names(backgrounds)[1]
+#     gene_background <- backgrounds[[bg_name]]
+# 
+#     # Background genes excluding target genes
+#     background_only_genes <- setdiff(gene_background, target_genes)
+#     N <- length(gene_background)
+# 
+#     # Set seed for reproducibility
+#     set.seed(seed)
+# 
+#     # Perform random sampling using replicate for efficiency
+#     random_counts <- replicate(n_iterations, {
+#       # Randomly sample genes from the background
+#       random_sample <- sample(background_only_genes, size = n_genes_tested, replace = FALSE)
+# 
+#       # Count the number of sampled genes that are expressed
+#       sum(random_sample %in% expressed_genes)
+#     })
+# 
+#     # Median number of expressed genes in random samples
+#     median_random_expressed <- median(random_counts)
+# 
+#     # Standard deviation
+#     sd_random_expressed <- sd(random_counts)
+# 
+#     # 95% Confidence Interval
+#     ci_lower <- quantile(random_counts, 0.025)
+#     ci_upper <- quantile(random_counts, 0.975)
+# 
+#     # Empirical p-value
+#     p_value_empirical <- sum(random_counts >= n_target_genes_expressed) / n_iterations
+# 
+#     # Hypergeometric test p-value
+#     n <- n_genes_tested
+#     k <- n_target_genes_expressed
+#     p_value_hyper <- phyper(k - 1, M, N - M, n, lower.tail = FALSE)
+# 
+#     # Compile results into a dataframe
+#     result_df <- data.frame(
+#         label = str_c(celltype, "_", virustype),
+#         celltype = celltype,
+#         virustype = virustype,
+#         background = bg_name,
+#         n_genes_tested = n_genes_tested,
+#         n_target_genes_expressed = n_target_genes_expressed,
+#         median_random_expressed = median_random_expressed,
+#         sd_random_expressed = sd_random_expressed,
+#         ci_lower = as.numeric(ci_lower),
+#         ci_upper = as.numeric(ci_upper),
+#         p_value_empirical = p_value_empirical,
+#         p_value_hyper = p_value_hyper
+#     )
+# 
+#     results_list[[bg_name]] <- result_df
+#   }
+# 
+#   # Combine the results into one data frame
+#   results_df <- do.call(rbind, results_list)
+# 
+#   return(results_df)
+# }
+
+```
+
+```{r}
+# 
+# # Initialize a list to store all results
+# all_results <- list()
+# 
+# # Loop over cell types and virus types
+# for (cell in celltypes) {
+#   for (virus in virustypes) {
+#     # Perform the enrichment analysis
+#     result <- perform_enrichment_analysis(
+#       celltype = cell,
+#       virustype = virus,
+#       target_genes = NDD_geneID,
+#       backgrounds = enrichment_backgrounds,
+#       aquino_data = NDD_data_enrichment,
+#       n_iterations = 1000,
+#       seed = 123
+#     )
+# 
+#     # Append the result to the list
+#     key <- paste(cell, virus, sep = "_")
+#     all_results[[key]] <- result
+#   }
+# }
+# 
+# # Combine all results into one data frame
+# final_results_df <- do.call(rbind, all_results)
+# 
+# # View the final results
+# 
+# 
+# names(final_results_df)
+
+```
+
+```{r}
+
+
+
+# There are 12676 unique genes in the Aquino dataset
+# long_data$GeneID %>%  unique() %>% length()
+
+# 
+# NDD_data_enrichment <- long_data %>% 
+#     dplyr::select(GeneID, Cell, virus, TPM)
+# 
+
+
+
+# Start loop
+# 
+# 
+# celltype = "MONO CD14"
+# virustype = "NS"
+# gene_background = enrichment_backgrounds[['all_gtex_genes']]
+# 
+# # Select out df per Cell and virus
+# aquino_subset <- NDD_data_enrichment %>% 
+#     dplyr::filter(Cell == celltype,
+#                   virus == virustype) %>% 
+#     dplyr::select(gene = GeneID, value = TPM)
+# 
+# 
+# # Number of target genes
+# n_genes_tested <- length(NDD_geneID)
+# 
+# # Identify expressed target genes and number expressed
+# expressed_target_genes <- intersect(NDD_geneID, aquino_subset$gene)
+# n_target_genes_expressed <- length(expressed_target_genes)
+# 
+# # Background genes excluding target genes
+# background_only_genes <- setdiff(gene_background, NDD_geneID)
+# 
+# # Number of iterations for random sampling
+# n_iterations <- 1000
+# 
+# # Initialize vector to store counts of expressed genes in random samples
+# random_counts <- numeric(n_iterations)
+# 
+# # Set seed for reproducibility
+# set.seed(613)
+# 
+# for (i in 1:n_iterations) {
+#   # Randomly sample genes from the background
+#   random_sample <- sample(background_only_genes, size = n_genes_tested, replace = FALSE)
+#   
+#   # Count the number of sampled genes that are expressed
+#   n_expressed_in_sample <- sum(random_sample %in% aquino_subset$gene)
+#   
+#   # Store the count
+#   random_counts[i] <- n_expressed_in_sample
+# }
+# 
+# 
+# # Median number of expressed genes in random samples
+# median_random_expressed <- median(random_counts)
+# 
+# # Standard deviation
+# sd_random_expressed <- sd(random_counts)
+# 
+# # 95% Confidence Interval
+# ci_lower <- quantile(random_counts, 0.025)
+# ci_upper <- quantile(random_counts, 0.975)
+# 
+# # Empirical p-value
+# p_value_empirical <- sum(random_counts >= n_target_genes_expressed) / n_iterations
+# 
+# 
+# # Hypergeometric Test
+# # Total number of background genes
+# N <- length(gene_background)
+# # Total number of expressed genes in the background
+# M <- length(aquino_subset$gene)
+# # Number of genes in the sample (same as number of target genes)
+# n <- n_genes_tested
+# # Number of expressed genes in the target set
+# k <- n_target_genes_expressed
+# # Hypergeometric test p-value
+# p_value_hyper <- phyper(k - 1, M, N - M, n, lower.tail = FALSE)
+# 
+# # Compile results into a dataframe
+# output_df <- data.frame(
+#   n_genes_tested = n_genes_tested,
+#   n_target_genes_expressed = n_target_genes_expressed,
+#   median_random_expressed = median_random_expressed,
+#   sd_random_expressed = sd_random_expressed,
+#   ci_lower = ci_lower,
+#   ci_upper = ci_upper,
+#   p_value_empirical = p_value_empirical,
+#   p_value_hyper = p_value_hyper
+# )
+# 
+# # Display the results
+# print(output_df)
+# 
+# # Prepare data for plotting
+# plot_df <- data.frame(
+#   category = c("Target Genes", "Random Samples"),
+#   expressed_genes = c(n_target_genes_expressed, median_random_expressed),
+#   ci_lower = c(n_target_genes_expressed, ci_lower),
+#   ci_upper = c(n_target_genes_expressed, ci_upper)
+# )
+# 
+
+
+
+# 
+# # Create dataframe including unexpressed genes (adding rows where TPM=0)
+# # Add in background genes and NDD genes that aren't expressed in the enrichment subset (assigning TPM = 0)
+# unexpressed_genes <- c(setdiff(gene_background, aquino_subset$gene), # Find genes in background not in aquino subset
+#                        setdiff(NDD_geneID, aquino_subset$gene)) %>%  # Find NDD genes not in aquino subset
+#     unique()
+# 
+# 
+# ## Background genes
+# unexpressed_genes <- tibble(
+#     gene = unexpressed_genes,
+#     value = 0
+# )
+# 
+# enrichment_subset <- bind_rows(aquino_subset,
+#                                unexpressed_genes)
+# 
+# target_genes <- enrichment_subset %>%
+#     dplyr::filter(gene %in% NDD_geneID)
+# background_genes <- enrichment_subset %>%
+#     dplyr::filter(!gene %in% NDD_geneID)
+# 
+# 
+# # Check length of dataframe
+# stopifnot(dim(target_genes)[1] == length(NDD_geneID))
+# 
+# 
+# # Number of expressed genes in the target set
+# n_target_genes_expressed <- sum(target_genes$value > 0)
+# n_genes_tested <- nrow(target_genes)
+# 
+# # Number of iterations for random sampling
+# n_iterations <- 1000
+# set.seed(613)
+# 
+# # Initialize vector to store counts of expressed genes in random samples
+# random_counts <- numeric(n_iterations)
+# 
+# for (i in 1:n_iterations) {
+#   # Randomly sample genes from the background (excluding target genes)
+#   random_sample <- background_genes %>%
+#     sample_n(size = n_genes_tested, replace = FALSE)
+#   
+#   # Count the number of expressed genes in the random sample
+#   random_counts[i] <- sum(random_sample$value > 0)
+# }
+# 
+# # Median number of expressed genes in random samples
+# median_random_expressed <- median(random_counts)
+# 
+# # Standard deviation of the number of expressed genes in random samples
+# sd_random_expressed <- sd(random_counts)
+# 
+# # 95% Confidence Interval from the random samples (quantiles are empirical confidence intervals in a bootstrapping situation)
+# ci_lower <- quantile(random_counts, 0.025)
+# ci_upper <- quantile(random_counts, 0.975)
+# 
+# # Calculate the p-value (proportion of random samples with as many or more expressed genes)
+# p_value_empirical <- sum(random_counts >= n_target_genes_expressed) / n_iterations
+# 
+# # Create the output data frame
+# output_df <- data.frame(
+#   n_genes_tested = n_genes_tested,
+#   n_target_genes_expressed = n_target_genes_expressed,
+#   median_random_expressed = median_random_expressed,
+#   sd_random_expressed = sd_random_expressed,
+#   ci_lower = ci_lower,
+#   ci_upper = ci_upper,
+#   p_value_empirical = p_value_empirical#,
+# #  p_value_hyper = p_value_hyper
+# )
+# 
+# 
+# ggplot(plot_df, aes(x = category, y = expressed_genes)) +
+#   geom_point(size = 3) +
+#   geom_errorbar(aes(ymin = ci_lower, ymax = ci_upper), width = 0.2) +
+#   ylab("Number of Expressed Genes") +
+#   xlab("") +
+#   ggtitle("Comparison of Expressed Genes in Target vs. Random Samples") +
+#   theme_minimal()
+
+```
+
+```{r}
+# test_list_for_enrichment = function(target_genes, background_genes, n_iterations=1000, p_cutoff=0.05, set_seed=F, gen_plot=T){
+#     #' @param target_genes: Your target genes in `data.frame` form. The function expects two columns, the first `gene` with the gene name, and the second `value` with the value i.e. correlation stat, TPM etc.
+#     #' @param background_genes: Your background gene set in `data.frame` form. The function expects two columns, the first `gene` with the gene name, and the second `value` with the value i.e. correlation stat, TPM etc.
+#     #' @param n_iterations: The number of iterations/ 'random gene sets'.
+#     #' @param p_cutoff: P-value cut-off to call the outcome of the test, default is 0.05.
+#     #' @param set_seed: Setting this to TRUE will make your result reproducible i.e it will be the same every time due to identical random gene set selection. Default is FALSE. 
+#     #' @param gen_plot: Setting this to TRUE will output a density plot of the random list medians with the target list median indicated on the distribution  
+#     #'
+#     #' @return Returns results table
+#     #'
+#     #' @examples
+#     #' # implement function with test data - target med > random simulation 
+#     #' test_list_for_enrichment(target_genes = data.frame(gene = paste0("ENSG", c(1:100)),
+#     #'                                                  value = runif(100, min=0.2, max=1)), 
+#     #'                        background_genes = data.frame(gene = paste0("ENSG", c(101:1100)),
+#     #'                                                      value = runif(1000, min=0, max=1)), 
+#     #'                        n_iterations = 1000, 
+#     #'                        p_cutoff = 0.05, 
+#     #'                        set_seed = F, 
+#     #'                        gen_plot = T)
+#     #' 
+#     # import libs
+#     library(dplyr)
+#     library(ggplot2)
+#     
+#     # if user wants to set seed, then set at 999
+#     if(set_seed==T){
+#         set.seed(999)
+#     }
+#     
+#     ## check user input ##
+#     
+#     # ensure target and background list are character vectors
+#     stopifnot(is.data.frame(target_genes)==T)
+#     stopifnot(is.data.frame(background_genes)==T)
+#     
+#     # if list is <1, throw error
+#     stopifnot(length(target_genes$gene %>% unique()) > 1)
+#     
+#     # ensure input gene tables contain only unique values
+#     target_genes = target_genes %>% 
+#         dplyr::distinct()
+#     
+#     background_genes = background_genes %>% 
+#         dplyr::distinct()
+#     
+#     background_genes_label = "result" 
+#     
+#     ############################
+#     
+#     # define rownames for df
+#     rn = c('target_set_med', 'random_set_med', 'num_above_rand_med', 'num_below_rand_med', 'p', 'outcome')
+#     # generate empty df to hold results
+#     res = as.data.frame(matrix(0L, nrow=length(rn), ncol=length(background_genes_label)))
+#     # assign row and colnames to empty df
+#     colnames(res) = background_genes_label
+#     rownames(res) = rn
+#     
+#     # get median value for target genes
+#     pop_med = median(target_genes$value, na.rm=T)
+#     
+#     # define empty array to hold medians for n=n_iterations random iterations
+#     med_arr = replicate(n=as.integer(n_iterations), 0)
+#     
+#     # define empty matrix to hold full vectors of random gene values for each iteration
+#     rand_arr = matrix(0L, nrow=n_iterations, ncol=length(target_genes$gene))
+#     
+#     # loop over n n_iterations, picking random gene sets n=n_iterations times, and calculating the median value for each
+#     # repeat random picking and median computation for n n_iterations
+#     for(j in 0:n_iterations){
+#         
+#         # select random nuclear genes of size of target gene list
+#         rand_selection = sample(x=background_genes$gene, size=length(target_genes$gene), replace=F)
+#         
+#         # get the values for the random genes selected 
+#         rand_vals = background_genes %>% 
+#             dplyr::filter(gene %in% rand_selection) %>% 
+#             dplyr::pull(value)
+#         
+#         # collect vector of random values for gene set, and add to rand_arr
+#         rand_arr[j,] = rand_vals
+#         
+#         # calculate median of random gene set, and add to med_arr
+#         med_arr[j] = median(rand_vals)
+#     }
+#     
+#     # median value of random medians
+#     med_of_med_arr = median(med_arr)
+#     
+#     # generate density plot to show random list mediation distribution
+#     if(gen_plot==T){
+#         
+#         p = data.frame(id=rep("med_arr", length(med_arr)), value=med_arr) %>% 
+#             ggplot(data=., aes(x=value, fill=id)) + 
+#             theme_bw() +
+#             geom_density(alpha=0.75) + 
+#             scale_fill_manual(values = my_palette[1]) +
+#             theme(legend.position = "none", 
+#                   plot.title = element_text(hjust = 0.5, size=11), 
+#                   plot.subtitle = element_text(hjust = 0.5, size=8)) + 
+#             geom_vline(xintercept=pop_med, linetype="longdash") + 
+#             geom_vline(xintercept=med_of_med_arr, linetype="longdash", alpha=0.75, colour='red') +
+#             labs(title="Distribution of random gene set medians", subtitle="Dashed black line = target set median\nDashed red line = median of random set medians") + 
+#             xlab("Gene set median") + 
+#             ylab("Density")
+#         
+#         plot = print(p)
+#     } 
+#     
+#     # calculate where target list median lies in pop. of random list medians
+#     above_pop_med = sum(med_arr > pop_med)
+#     below_pop_med = sum(med_arr < pop_med)
+#     
+#     # assign values to df
+#     res['target_set_med', background_genes_label] = pop_med
+#     res['random_set_med', background_genes_label] = med_of_med_arr
+#     res['num_above_rand_med', background_genes_label] = above_pop_med
+#     res['num_below_rand_med', background_genes_label] = below_pop_med
+#     
+#     # calculate P-value lower tail - if target median is lower than median of random medians, then calculate lower-tail P-value 
+#     if(pop_med < med_of_med_arr){
+#         p = as.numeric((n_iterations-above_pop_med)/n_iterations)
+#         res['p', background_genes_label] = p
+#         if(p<=p_cutoff){
+#             res['outcome', background_genes_label] = "Target median sig. < than random gene set medians"
+#         } else{
+#             res['outcome', background_genes_label] = "Target median not sig. diff to random gene set medians"
+#         }
+#     }
+#     
+#     # calculate P-value upper tail - if target median is higher than median of random medians, then calculate upper-tail P-value 
+#     if(pop_med > med_of_med_arr){
+#         p = as.numeric((n_iterations-below_pop_med)/n_iterations)
+#         res['p', background_genes_label] = p
+#         if(p<=p_cutoff){
+#             res['outcome', background_genes_label] = "Target median sig. > than random gene set medians"
+#         } else{
+#             res['outcome', background_genes_label] = "Target median not sig. diff to random gene set medians"
+#         }
+#     }
+#     
+#     res['p_cutoff', background_genes_label] = p_cutoff
+#     
+#     enrichment_summary <- list("Enrichment results" = res,
+#                                "Enrichment plot" = plot)
+#     
+#     
+# }
+```
+
+```{r}
+# enrichment_result <- test_list_for_enrichment(target_genes, 
+#                          background_genes,
+#                          n_iterations = 1000,
+#                          p_cutoff = 0.05,
+#                          set_seed = T,
+#                          gen_plot = F)
+# 
+
+```
+
+
 ## Explore specificity of gene expression
 
-To identify the specificity of gene expression by cell type and activation state, a specificity metric tau is used. The metric rangers from 0-1, with a higher value indicating greater specificity.
+To identify the specificity of gene expression by cell type and activation state, a specificity metric tau is used. The metric ranges from 0-1, with a higher value indicating greater specificity.
 
 ### Specificity by cell type
 
@@ -1198,11 +2023,22 @@ euro_vs_african_expression_plot <- table_4b_condensed %>%
        x = NULL, #"Cell lineage",
        y = "Gene")
 
+
 euro_vs_african_expression_plot +
-  labs(title = "DGE of cell lineages by ethnic background", 
+  labs(title = "DGE of cell lineages by ancestry", 
        subtitle = "European relative to African")
 
+
 ```
+
+# Enrichment of gene expression results
+
+## Enrichment of Chen associations
+
+```{r}
+
+```
+
 
 
 # Compiled Figure 1
@@ -1254,6 +2090,71 @@ ggsave(fig1_gene_expression_chen,
        height = 36, width = 32, units = "cm",
        file = file.path(base_dir, "figures/fig_1_gene_expression_chen.png"))
 ```
+
+# Individual figure panels
+
+```{r}
+thesis_fig_3 <- (aquino_gene_count + theme_aw + theme(legend.direction = "vertical",
+                                                      legend.title = element_text(vjust = 1)) | 
+                     enrichment_plot) +
+    plot_annotation(tag_levels = "a")
+
+ggsave(thesis_fig_3,
+       file = file.path(base_dir, "figures/thesis3_aquino_gene_count.pdf"),
+       width = 18, height = 11, units = "cm")
+
+
+```
+
+```{r, units = "cm", fig.width=18, fig.height=18}
+thesis_figure_chen <- (chen_gene_count + 
+                           theme_aw + 
+                           theme(legend.direction = "vertical",          
+                                 legend.position = "right",
+                                 legend.title = element_text(vjust = 1))) /
+         chen_association_count +
+    plot_annotation(tag_levels = "a") +
+    plot_layout(heights = c(1,4))
+
+ggsave(thesis_figure_chen,
+       file = file.path(base_dir, "figures/thesis_chen_associations.png"),
+       width = 38, height = 45, units = "cm")
+
+thesis_figure_chen
+```
+```{r}
+thesis_expression_tau_plot <-  (aquino_cell_expression_plot_max  + theme_aw + 
+       theme(legend.key.width = unit(0.8, "cm"),
+             legend.title = element_text(vjust = 1))  + 
+       labs(title = NULL, subtitle = NULL) | 
+       cell_tau_plot + theme_aw +theme(strip.text.y = element_blank(),
+                                       legend.key.width = unit(0.8, "cm"),
+                                       legend.title = element_text(vjust = 1)) | 
+       activationState_tau_plot + labs(x = NULL) + theme_aw +  theme(axis.text.y = element_blank(),
+                                                               axis.ticks.y = element_blank(), 
+                                                               legend.key.width = unit(0.8, "cm"),
+                                                               legend.title = element_text(vjust = 1))
+                                                               
+ ) + plot_layout(widths = c(8,1,1), guides = "collect") +
+     plot_annotation(tag_levels = "a") &
+  theme(legend.position = "bottom")
+
+thesis_expression_tau_plot
+
+ggsave(thesis_expression_tau_plot,
+       file  = file.path(base_dir, "figures/thesis_expression_tau.png"),
+       units = "cm", width = 36, height = 30)
+
+```
+
+```{r}
+ggsave(euro_vs_african_expression_plot,
+       file = file.path(base_dir, "figures/thesis_eur_afr_dge.png"),
+       units = "cm", width = 12, height = 16)
+
+```
+
+
 
 
 ```{r}
