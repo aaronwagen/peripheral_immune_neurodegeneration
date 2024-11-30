@@ -552,6 +552,12 @@ aquino_gene_count
 
 ```
 
+## Enrichment of NDD genes in peripheral immune cells verse other genes
+
+To compare whether NDD genes are enriched in peripheral immune cells, compared to other genes. Wi relative to the median expression of genes expressed in GTEX 
+
+
+
 # Association between peripheral blood counts and genetic variability at NDD genes: Chen et al 2020
 
 To answer the question whether variants in NDD genes can influence Using Chen et al multi-ancestry phenotype QTL to explore whether peripheral blood counts are related to variation in NDD genes.
