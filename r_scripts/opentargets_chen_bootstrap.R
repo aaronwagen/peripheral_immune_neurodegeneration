@@ -16,12 +16,17 @@ if (location == "jane") {
 }
 
 
+
+
 NDD_geneID <- readRDS(file = file.path(base_dir, "/derived_data/NDD_ENSG_gene_ids.RDS"))
 NDD_geneID_in_aquino <- readRDS(file = file.path(base_dir, "/derived_data/NDD_ENSG_gene_ids_in_aquino.RDS"))
 all_gtex_genes <- readRDS(file = file.path(base_dir, "/derived_data/gtex_all_ENSG_ids.RDS"))
 all_gtex_genes_noNDD <-   setdiff(all_gtex_genes, NDD_geneID)
 brain_gtex_genes <- readRDS(file = file.path(base_dir, "/derived_data/gtex_brain_ENSG_ids.RDS"))
 brain_gtex_genes_noNDD <- setdiff(brain_gtex_genes, NDD_geneID)
+
+#output_dir <-  "/Users/wagena/Documents/"
+output_dir <- "base_dir/derived_data/"
 
 # Set base URL of GraphQL API endpoint
 base_url <- "https://api.genetics.opentargets.org/graphql"
@@ -172,7 +177,7 @@ for (iteration_no in 1:n_iterations) {
 
 
 write_delim(bootstrap_chen_aquino_all_gtex_genes ,
-            file  = "/Users/wagena/Documents/chen_aquino_bootstrap_all_gtex_genes.csv")
+            file  = file.path(output_dir, "chen_aquino_bootstrap_all_gtex_genes.csv"))
 
 
 
@@ -285,7 +290,7 @@ for (iteration_no in 1:n_iterations) {
 
 
 write_delim(bootstrap_chen_aquino_brain_gtex_genes ,
-            file  = "/Users/wagena/Documents/chen_aquino_bootstrap_brain_gtex_genes.csv")
+            file  = file.path(output_dir, "chen_aquino_bootstrap_brain_gtex_genes.csv"))
 
 
 
