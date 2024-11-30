@@ -586,6 +586,7 @@ gene_expressed_in_data <- summary_genes %>%
 gene_expressed_in_data %>% 
   gt() %>% 
   opt_interactive()
+
 ```
 
 ## The instances of genes expressed per disease
@@ -1013,6 +1014,13 @@ NDD_geneID <- gtex_gene_expression %>%
 
 saveRDS(NDD_geneID,
         file = file.path(base_dir, "/derived_data/NDD_ENSG_gene_ids.RDS"))
+
+NDD_geneID_in_aquino <- gtex_gene_expression %>% 
+    dplyr::filter(symbol %in% genes_in_aquino$gene) %>% 
+    dplyr::pull(gene) %>% sort()
+
+saveRDS(NDD_geneID_in_aquino,
+        file = file.path(base_dir, "/derived_data/NDD_ENSG_gene_ids_in_aquino.RDS"))
         
 # Number of target genes
 target_genes <- NDD_geneID
@@ -1226,6 +1234,7 @@ enrichment_plot <- (aquino_gene_count |
     plot_annotation(tag_levels = c("a", "b"))
 
 
+
 ```
 
 
@@ -1243,132 +1252,130 @@ ggsave(enrichment_plot,
 
 ```
 
-
+#### Previous (discarded) enrichment approaches 
 
 ```{r}
-perform_enrichment_analysis <- function(celltype, virustype, target_genes, backgrounds, aquino_data, n_iterations = 1000, seed = 613) {
-
-  # Select the subset of aquino_data for the given celltype and virustype
-  aquino_subset <- aquino_data %>%
-    dplyr::filter(Cell == celltype, virus == virustype) %>%
-    dplyr::select(gene = GeneID, value = TPM)
-
-  # Number of target genes
-  n_genes_tested <- length(target_genes)
-
-  # Identify expressed target genes and number expressed
-  expressed_target_genes <- intersect(target_genes, aquino_subset$gene)
-  n_target_genes_expressed <- length(expressed_target_genes)
-
-  # Total number of expressed genes in aquino_subset
-  expressed_genes <- aquino_subset$gene
-  M <- length(expressed_genes)
-
-  # Initialize list to store results for each background
-  results_list <- list()
-
-  # Loop over each background
-  for (bg_name in names(backgrounds)) {
-   # bg_name <- names(backgrounds)[1]
-    gene_background <- backgrounds[[bg_name]]
-
-    # Background genes excluding target genes
-    background_only_genes <- setdiff(gene_background, target_genes)
-    N <- length(gene_background)
-
-    # Set seed for reproducibility
-    set.seed(seed)
-
-    # Perform random sampling using replicate for efficiency
-    random_counts <- replicate(n_iterations, {
-      # Randomly sample genes from the background
-      random_sample <- sample(background_only_genes, size = n_genes_tested, replace = FALSE)
-
-      # Count the number of sampled genes that are expressed
-      sum(random_sample %in% expressed_genes)
-    })
-
-    # Median number of expressed genes in random samples
-    median_random_expressed <- median(random_counts)
-
-    # Standard deviation
-    sd_random_expressed <- sd(random_counts)
-
-    # 95% Confidence Interval
-    ci_lower <- quantile(random_counts, 0.025)
-    ci_upper <- quantile(random_counts, 0.975)
-
-    # Empirical p-value
-    p_value_empirical <- sum(random_counts >= n_target_genes_expressed) / n_iterations
-
-    # Hypergeometric test p-value
-    n <- n_genes_tested
-    k <- n_target_genes_expressed
-    p_value_hyper <- phyper(k - 1, M, N - M, n, lower.tail = FALSE)
-
-    # Compile results into a dataframe
-    result_df <- data.frame(
-        label = str_c(celltype, "_", virustype),
-        celltype = celltype,
-        virustype = virustype,
-        background = bg_name,
-        n_genes_tested = n_genes_tested,
-        n_target_genes_expressed = n_target_genes_expressed,
-        median_random_expressed = median_random_expressed,
-        sd_random_expressed = sd_random_expressed,
-        ci_lower = as.numeric(ci_lower),
-        ci_upper = as.numeric(ci_upper),
-        p_value_empirical = p_value_empirical,
-        p_value_hyper = p_value_hyper
-    )
-
-    results_list[[bg_name]] <- result_df
-  }
-
-  # Combine the results into one data frame
-  results_df <- do.call(rbind, results_list)
-
-  return(results_df)
-}
+# perform_enrichment_analysis <- function(celltype, virustype, target_genes, backgrounds, aquino_data, n_iterations = 1000, seed = 613) {
+# 
+#   # Select the subset of aquino_data for the given celltype and virustype
+#   aquino_subset <- aquino_data %>%
+#     dplyr::filter(Cell == celltype, virus == virustype) %>%
+#     dplyr::select(gene = GeneID, value = TPM)
+# 
+#   # Number of target genes
+#   n_genes_tested <- length(target_genes)
+# 
+#   # Identify expressed target genes and number expressed
+#   expressed_target_genes <- intersect(target_genes, aquino_subset$gene)
+#   n_target_genes_expressed <- length(expressed_target_genes)
+# 
+#   # Total number of expressed genes in aquino_subset
+#   expressed_genes <- aquino_subset$gene
+#   M <- length(expressed_genes)
+# 
+#   # Initialize list to store results for each background
+#   results_list <- list()
+# 
+#   # Loop over each background
+#   for (bg_name in names(backgrounds)) {
+#    # bg_name <- names(backgrounds)[1]
+#     gene_background <- backgrounds[[bg_name]]
+# 
+#     # Background genes excluding target genes
+#     background_only_genes <- setdiff(gene_background, target_genes)
+#     N <- length(gene_background)
+# 
+#     # Set seed for reproducibility
+#     set.seed(seed)
+# 
+#     # Perform random sampling using replicate for efficiency
+#     random_counts <- replicate(n_iterations, {
+#       # Randomly sample genes from the background
+#       random_sample <- sample(background_only_genes, size = n_genes_tested, replace = FALSE)
+# 
+#       # Count the number of sampled genes that are expressed
+#       sum(random_sample %in% expressed_genes)
+#     })
+# 
+#     # Median number of expressed genes in random samples
+#     median_random_expressed <- median(random_counts)
+# 
+#     # Standard deviation
+#     sd_random_expressed <- sd(random_counts)
+# 
+#     # 95% Confidence Interval
+#     ci_lower <- quantile(random_counts, 0.025)
+#     ci_upper <- quantile(random_counts, 0.975)
+# 
+#     # Empirical p-value
+#     p_value_empirical <- sum(random_counts >= n_target_genes_expressed) / n_iterations
+# 
+#     # Hypergeometric test p-value
+#     n <- n_genes_tested
+#     k <- n_target_genes_expressed
+#     p_value_hyper <- phyper(k - 1, M, N - M, n, lower.tail = FALSE)
+# 
+#     # Compile results into a dataframe
+#     result_df <- data.frame(
+#         label = str_c(celltype, "_", virustype),
+#         celltype = celltype,
+#         virustype = virustype,
+#         background = bg_name,
+#         n_genes_tested = n_genes_tested,
+#         n_target_genes_expressed = n_target_genes_expressed,
+#         median_random_expressed = median_random_expressed,
+#         sd_random_expressed = sd_random_expressed,
+#         ci_lower = as.numeric(ci_lower),
+#         ci_upper = as.numeric(ci_upper),
+#         p_value_empirical = p_value_empirical,
+#         p_value_hyper = p_value_hyper
+#     )
+# 
+#     results_list[[bg_name]] <- result_df
+#   }
+# 
+#   # Combine the results into one data frame
+#   results_df <- do.call(rbind, results_list)
+# 
+#   return(results_df)
+# }
 
 ```
 
-
 ```{r}
-
-# Initialize a list to store all results
-all_results <- list()
-
-# Loop over cell types and virus types
-for (cell in celltypes) {
-  for (virus in virustypes) {
-    # Perform the enrichment analysis
-    result <- perform_enrichment_analysis(
-      celltype = cell,
-      virustype = virus,
-      target_genes = NDD_geneID,
-      backgrounds = enrichment_backgrounds,
-      aquino_data = NDD_data_enrichment,
-      n_iterations = 1000,
-      seed = 123
-    )
-
-    # Append the result to the list
-    key <- paste(cell, virus, sep = "_")
-    all_results[[key]] <- result
-  }
-}
-
-# Combine all results into one data frame
-final_results_df <- do.call(rbind, all_results)
-
-# View the final results
-
-
-names(final_results_df)
+# 
+# # Initialize a list to store all results
+# all_results <- list()
+# 
+# # Loop over cell types and virus types
+# for (cell in celltypes) {
+#   for (virus in virustypes) {
+#     # Perform the enrichment analysis
+#     result <- perform_enrichment_analysis(
+#       celltype = cell,
+#       virustype = virus,
+#       target_genes = NDD_geneID,
+#       backgrounds = enrichment_backgrounds,
+#       aquino_data = NDD_data_enrichment,
+#       n_iterations = 1000,
+#       seed = 123
+#     )
+# 
+#     # Append the result to the list
+#     key <- paste(cell, virus, sep = "_")
+#     all_results[[key]] <- result
+#   }
+# }
+# 
+# # Combine all results into one data frame
+# final_results_df <- do.call(rbind, all_results)
+# 
+# # View the final results
+# 
+# 
+# names(final_results_df)
 
 ```
-
 
 ```{r}
 
@@ -1564,156 +1571,155 @@ names(final_results_df)
 
 ```
 
-
 ```{r}
-test_list_for_enrichment = function(target_genes, background_genes, n_iterations=1000, p_cutoff=0.05, set_seed=F, gen_plot=T){
-    #' @param target_genes: Your target genes in `data.frame` form. The function expects two columns, the first `gene` with the gene name, and the second `value` with the value i.e. correlation stat, TPM etc.
-    #' @param background_genes: Your background gene set in `data.frame` form. The function expects two columns, the first `gene` with the gene name, and the second `value` with the value i.e. correlation stat, TPM etc.
-    #' @param n_iterations: The number of iterations/ 'random gene sets'.
-    #' @param p_cutoff: P-value cut-off to call the outcome of the test, default is 0.05.
-    #' @param set_seed: Setting this to TRUE will make your result reproducible i.e it will be the same every time due to identical random gene set selection. Default is FALSE. 
-    #' @param gen_plot: Setting this to TRUE will output a density plot of the random list medians with the target list median indicated on the distribution  
-    #'
-    #' @return Returns results table
-    #'
-    #' @examples
-    #' # implement function with test data - target med > random simulation 
-    #' test_list_for_enrichment(target_genes = data.frame(gene = paste0("ENSG", c(1:100)),
-    #'                                                  value = runif(100, min=0.2, max=1)), 
-    #'                        background_genes = data.frame(gene = paste0("ENSG", c(101:1100)),
-    #'                                                      value = runif(1000, min=0, max=1)), 
-    #'                        n_iterations = 1000, 
-    #'                        p_cutoff = 0.05, 
-    #'                        set_seed = F, 
-    #'                        gen_plot = T)
-    #' 
-    # import libs
-    library(dplyr)
-    library(ggplot2)
-    
-    # if user wants to set seed, then set at 999
-    if(set_seed==T){
-        set.seed(999)
-    }
-    
-    ## check user input ##
-    
-    # ensure target and background list are character vectors
-    stopifnot(is.data.frame(target_genes)==T)
-    stopifnot(is.data.frame(background_genes)==T)
-    
-    # if list is <1, throw error
-    stopifnot(length(target_genes$gene %>% unique()) > 1)
-    
-    # ensure input gene tables contain only unique values
-    target_genes = target_genes %>% 
-        dplyr::distinct()
-    
-    background_genes = background_genes %>% 
-        dplyr::distinct()
-    
-    background_genes_label = "result" 
-    
-    ############################
-    
-    # define rownames for df
-    rn = c('target_set_med', 'random_set_med', 'num_above_rand_med', 'num_below_rand_med', 'p', 'outcome')
-    # generate empty df to hold results
-    res = as.data.frame(matrix(0L, nrow=length(rn), ncol=length(background_genes_label)))
-    # assign row and colnames to empty df
-    colnames(res) = background_genes_label
-    rownames(res) = rn
-    
-    # get median value for target genes
-    pop_med = median(target_genes$value, na.rm=T)
-    
-    # define empty array to hold medians for n=n_iterations random iterations
-    med_arr = replicate(n=as.integer(n_iterations), 0)
-    
-    # define empty matrix to hold full vectors of random gene values for each iteration
-    rand_arr = matrix(0L, nrow=n_iterations, ncol=length(target_genes$gene))
-    
-    # loop over n n_iterations, picking random gene sets n=n_iterations times, and calculating the median value for each
-    # repeat random picking and median computation for n n_iterations
-    for(j in 0:n_iterations){
-        
-        # select random nuclear genes of size of target gene list
-        rand_selection = sample(x=background_genes$gene, size=length(target_genes$gene), replace=F)
-        
-        # get the values for the random genes selected 
-        rand_vals = background_genes %>% 
-            dplyr::filter(gene %in% rand_selection) %>% 
-            dplyr::pull(value)
-        
-        # collect vector of random values for gene set, and add to rand_arr
-        rand_arr[j,] = rand_vals
-        
-        # calculate median of random gene set, and add to med_arr
-        med_arr[j] = median(rand_vals)
-    }
-    
-    # median value of random medians
-    med_of_med_arr = median(med_arr)
-    
-    # generate density plot to show random list mediation distribution
-    if(gen_plot==T){
-        
-        p = data.frame(id=rep("med_arr", length(med_arr)), value=med_arr) %>% 
-            ggplot(data=., aes(x=value, fill=id)) + 
-            theme_bw() +
-            geom_density(alpha=0.75) + 
-            scale_fill_manual(values = my_palette[1]) +
-            theme(legend.position = "none", 
-                  plot.title = element_text(hjust = 0.5, size=11), 
-                  plot.subtitle = element_text(hjust = 0.5, size=8)) + 
-            geom_vline(xintercept=pop_med, linetype="longdash") + 
-            geom_vline(xintercept=med_of_med_arr, linetype="longdash", alpha=0.75, colour='red') +
-            labs(title="Distribution of random gene set medians", subtitle="Dashed black line = target set median\nDashed red line = median of random set medians") + 
-            xlab("Gene set median") + 
-            ylab("Density")
-        
-        plot = print(p)
-    } 
-    
-    # calculate where target list median lies in pop. of random list medians
-    above_pop_med = sum(med_arr > pop_med)
-    below_pop_med = sum(med_arr < pop_med)
-    
-    # assign values to df
-    res['target_set_med', background_genes_label] = pop_med
-    res['random_set_med', background_genes_label] = med_of_med_arr
-    res['num_above_rand_med', background_genes_label] = above_pop_med
-    res['num_below_rand_med', background_genes_label] = below_pop_med
-    
-    # calculate P-value lower tail - if target median is lower than median of random medians, then calculate lower-tail P-value 
-    if(pop_med < med_of_med_arr){
-        p = as.numeric((n_iterations-above_pop_med)/n_iterations)
-        res['p', background_genes_label] = p
-        if(p<=p_cutoff){
-            res['outcome', background_genes_label] = "Target median sig. < than random gene set medians"
-        } else{
-            res['outcome', background_genes_label] = "Target median not sig. diff to random gene set medians"
-        }
-    }
-    
-    # calculate P-value upper tail - if target median is higher than median of random medians, then calculate upper-tail P-value 
-    if(pop_med > med_of_med_arr){
-        p = as.numeric((n_iterations-below_pop_med)/n_iterations)
-        res['p', background_genes_label] = p
-        if(p<=p_cutoff){
-            res['outcome', background_genes_label] = "Target median sig. > than random gene set medians"
-        } else{
-            res['outcome', background_genes_label] = "Target median not sig. diff to random gene set medians"
-        }
-    }
-    
-    res['p_cutoff', background_genes_label] = p_cutoff
-    
-    enrichment_summary <- list("Enrichment results" = res,
-                               "Enrichment plot" = plot)
-    
-    
-}
+# test_list_for_enrichment = function(target_genes, background_genes, n_iterations=1000, p_cutoff=0.05, set_seed=F, gen_plot=T){
+#     #' @param target_genes: Your target genes in `data.frame` form. The function expects two columns, the first `gene` with the gene name, and the second `value` with the value i.e. correlation stat, TPM etc.
+#     #' @param background_genes: Your background gene set in `data.frame` form. The function expects two columns, the first `gene` with the gene name, and the second `value` with the value i.e. correlation stat, TPM etc.
+#     #' @param n_iterations: The number of iterations/ 'random gene sets'.
+#     #' @param p_cutoff: P-value cut-off to call the outcome of the test, default is 0.05.
+#     #' @param set_seed: Setting this to TRUE will make your result reproducible i.e it will be the same every time due to identical random gene set selection. Default is FALSE. 
+#     #' @param gen_plot: Setting this to TRUE will output a density plot of the random list medians with the target list median indicated on the distribution  
+#     #'
+#     #' @return Returns results table
+#     #'
+#     #' @examples
+#     #' # implement function with test data - target med > random simulation 
+#     #' test_list_for_enrichment(target_genes = data.frame(gene = paste0("ENSG", c(1:100)),
+#     #'                                                  value = runif(100, min=0.2, max=1)), 
+#     #'                        background_genes = data.frame(gene = paste0("ENSG", c(101:1100)),
+#     #'                                                      value = runif(1000, min=0, max=1)), 
+#     #'                        n_iterations = 1000, 
+#     #'                        p_cutoff = 0.05, 
+#     #'                        set_seed = F, 
+#     #'                        gen_plot = T)
+#     #' 
+#     # import libs
+#     library(dplyr)
+#     library(ggplot2)
+#     
+#     # if user wants to set seed, then set at 999
+#     if(set_seed==T){
+#         set.seed(999)
+#     }
+#     
+#     ## check user input ##
+#     
+#     # ensure target and background list are character vectors
+#     stopifnot(is.data.frame(target_genes)==T)
+#     stopifnot(is.data.frame(background_genes)==T)
+#     
+#     # if list is <1, throw error
+#     stopifnot(length(target_genes$gene %>% unique()) > 1)
+#     
+#     # ensure input gene tables contain only unique values
+#     target_genes = target_genes %>% 
+#         dplyr::distinct()
+#     
+#     background_genes = background_genes %>% 
+#         dplyr::distinct()
+#     
+#     background_genes_label = "result" 
+#     
+#     ############################
+#     
+#     # define rownames for df
+#     rn = c('target_set_med', 'random_set_med', 'num_above_rand_med', 'num_below_rand_med', 'p', 'outcome')
+#     # generate empty df to hold results
+#     res = as.data.frame(matrix(0L, nrow=length(rn), ncol=length(background_genes_label)))
+#     # assign row and colnames to empty df
+#     colnames(res) = background_genes_label
+#     rownames(res) = rn
+#     
+#     # get median value for target genes
+#     pop_med = median(target_genes$value, na.rm=T)
+#     
+#     # define empty array to hold medians for n=n_iterations random iterations
+#     med_arr = replicate(n=as.integer(n_iterations), 0)
+#     
+#     # define empty matrix to hold full vectors of random gene values for each iteration
+#     rand_arr = matrix(0L, nrow=n_iterations, ncol=length(target_genes$gene))
+#     
+#     # loop over n n_iterations, picking random gene sets n=n_iterations times, and calculating the median value for each
+#     # repeat random picking and median computation for n n_iterations
+#     for(j in 0:n_iterations){
+#         
+#         # select random nuclear genes of size of target gene list
+#         rand_selection = sample(x=background_genes$gene, size=length(target_genes$gene), replace=F)
+#         
+#         # get the values for the random genes selected 
+#         rand_vals = background_genes %>% 
+#             dplyr::filter(gene %in% rand_selection) %>% 
+#             dplyr::pull(value)
+#         
+#         # collect vector of random values for gene set, and add to rand_arr
+#         rand_arr[j,] = rand_vals
+#         
+#         # calculate median of random gene set, and add to med_arr
+#         med_arr[j] = median(rand_vals)
+#     }
+#     
+#     # median value of random medians
+#     med_of_med_arr = median(med_arr)
+#     
+#     # generate density plot to show random list mediation distribution
+#     if(gen_plot==T){
+#         
+#         p = data.frame(id=rep("med_arr", length(med_arr)), value=med_arr) %>% 
+#             ggplot(data=., aes(x=value, fill=id)) + 
+#             theme_bw() +
+#             geom_density(alpha=0.75) + 
+#             scale_fill_manual(values = my_palette[1]) +
+#             theme(legend.position = "none", 
+#                   plot.title = element_text(hjust = 0.5, size=11), 
+#                   plot.subtitle = element_text(hjust = 0.5, size=8)) + 
+#             geom_vline(xintercept=pop_med, linetype="longdash") + 
+#             geom_vline(xintercept=med_of_med_arr, linetype="longdash", alpha=0.75, colour='red') +
+#             labs(title="Distribution of random gene set medians", subtitle="Dashed black line = target set median\nDashed red line = median of random set medians") + 
+#             xlab("Gene set median") + 
+#             ylab("Density")
+#         
+#         plot = print(p)
+#     } 
+#     
+#     # calculate where target list median lies in pop. of random list medians
+#     above_pop_med = sum(med_arr > pop_med)
+#     below_pop_med = sum(med_arr < pop_med)
+#     
+#     # assign values to df
+#     res['target_set_med', background_genes_label] = pop_med
+#     res['random_set_med', background_genes_label] = med_of_med_arr
+#     res['num_above_rand_med', background_genes_label] = above_pop_med
+#     res['num_below_rand_med', background_genes_label] = below_pop_med
+#     
+#     # calculate P-value lower tail - if target median is lower than median of random medians, then calculate lower-tail P-value 
+#     if(pop_med < med_of_med_arr){
+#         p = as.numeric((n_iterations-above_pop_med)/n_iterations)
+#         res['p', background_genes_label] = p
+#         if(p<=p_cutoff){
+#             res['outcome', background_genes_label] = "Target median sig. < than random gene set medians"
+#         } else{
+#             res['outcome', background_genes_label] = "Target median not sig. diff to random gene set medians"
+#         }
+#     }
+#     
+#     # calculate P-value upper tail - if target median is higher than median of random medians, then calculate upper-tail P-value 
+#     if(pop_med > med_of_med_arr){
+#         p = as.numeric((n_iterations-below_pop_med)/n_iterations)
+#         res['p', background_genes_label] = p
+#         if(p<=p_cutoff){
+#             res['outcome', background_genes_label] = "Target median sig. > than random gene set medians"
+#         } else{
+#             res['outcome', background_genes_label] = "Target median not sig. diff to random gene set medians"
+#         }
+#     }
+#     
+#     res['p_cutoff', background_genes_label] = p_cutoff
+#     
+#     enrichment_summary <- list("Enrichment results" = res,
+#                                "Enrichment plot" = plot)
+#     
+#     
+# }
 ```
 
 ```{r}
