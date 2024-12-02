@@ -3,7 +3,7 @@
 # A script to bootstrap the number of associations found in Chen compared to the expressed Aquino genes found.
 
 # To run on slurm: 
-# sbatch --time=1-00:00:00 --mem=6G --wrap="Rscript r_scripts/opentargets_chen_bootstrap_parallelised.R"
+# sbatch --time=1-00:00:00 --mem=6G --wrap="Rscript opentargets_chen_bootstrap_parallelised.R"
 
 # Load necessary libraries
 library(httr)
@@ -40,7 +40,7 @@ brain_gtex_genes_noNDD <- setdiff(brain_gtex_genes, NDD_geneID)
 
 # Set parameters
 set.seed(613)
-n_iterations <- 12
+n_iterations <- 500
 n_genes_to_check <- length(NDD_geneID_in_aquino)
 traits_of_interest <- c("White blood cell count",
                         "Lymphocyte counts",
