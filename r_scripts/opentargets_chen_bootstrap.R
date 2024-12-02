@@ -6,12 +6,12 @@ library(tidyverse)
 
 
 # Choose working location as jane or nemo
-location <- "jane"
+location <- "nemo"
 
 if (location == "jane") {
     base_dir <- "/Volumes/lab-gandhis/home/users/wagena/periph_immune_neurodegen_publication/"
 } else if (location == "nemo") {
-    base_dir <- here::here()
+    base_dir <- "/camp/home/wagena/periph_immune_neurodegen_publication/"
     options(bitmapType='cairo') # Add graphics device for nemo
 }
 
@@ -26,7 +26,7 @@ brain_gtex_genes <- readRDS(file = file.path(base_dir, "/derived_data/gtex_brain
 brain_gtex_genes_noNDD <- setdiff(brain_gtex_genes, NDD_geneID)
 
 #output_dir <-  "/Users/wagena/Documents/"
-output_dir <- "base_dir/derived_data/"
+output_dir <- file.path(base_dir, "/derived_data/")
 
 # Set base URL of GraphQL API endpoint
 base_url <- "https://api.genetics.opentargets.org/graphql"
