@@ -202,8 +202,8 @@ my_palette <- c("Colocalised" = "darkslategrey",
              "Expressed" = "darkslategrey",
              "Not Expressed" = "aquamarine3",
              "WBC association" = "darkslategrey",
-             "Blood count association" = "darkslategrey",
-             "No association" = "aquamarine3",
+             "Blood count association" = "darkslateblue",
+             "No association" = "#7399BD",
              "White blood cell count - negative β" = "slategrey",
               "White blood cell count - positive β" = "darkslategrey",
              "Monocyte count - negative β" =  "aquamarine3",
@@ -609,8 +609,9 @@ aquino_gene_count <- aquino_gene_count_data %>%
   theme_aw +
   theme(legend.position = "bottom", 
         panel.grid.major.x = element_line(),
-        panel.grid.major.y = element_blank()
-  )
+        panel.grid.major.y = element_blank(),
+        axis.text.x = element_text(angle = 0, hjust = 0.5)
+        )
         
 
 aquino_gene_count
@@ -833,10 +834,33 @@ chen_gene_count
 ```
 
 
+```{r, fig.width = 14, fig.height = 6}
+
+chen_gene_count_horizontal <- chen_gene_count_data %>% 
+    dplyr::select(disease, Trait, `Blood count association`, `No association`) %>% 
+    pivot_longer(cols = c("Blood count association", "No association"), names_to = "association", values_to = "count") %>% 
+    dplyr::mutate(disease = factor(disease, levels = c("AD", "PD", "FTD"))) %>% 
+    ggplot(aes(x = count, y = fct_rev(disease), fill = fct_rev(association))) +
+    geom_bar(stat = "identity", position = "fill") +
+    scale_fill_manual(values = my_palette,
+                       breaks = c("Blood count association", "No association")) +
+    scale_x_continuous(
+        breaks = c(0, 0.25, 0.5, 0.75, 1),  # Set specific break points
+        labels = c("0", "0.25", "0.5", "0.75", "1")  # Customize the labels
+    ) +
+    labs(y = NULL, x = "Proportion of genes", fill = NULL) +
+    theme_aw +
+    theme(legend.position = "bottom",
+          axis.text.x = element_text(angle = 0, hjust = 0.5)) +
+    facet_grid(~ Trait)
+
+```
+
+
 
 # How are NDD genes expressed across cell types and activation states: Aquino et al.
 
-## Proportion of gene expression for each gene, normalised by cell type & activation state
+## ****Proportion of gene expression for each gene, normalised by cell type & activation state
 
 This section explores the pattern of expression of NDD genes in peripheral immune cells. To identify which peripheral cell has the greatest expression, the results were normalised to the cell type and activation state with the greatest expression per gene. The figure shows the activation state with the maximum proportion per cell type.
 
@@ -937,6 +961,44 @@ wrap_text <- function(x) {
 # Legend width paremeter
 legend_width <- unit(1.5, "lines")
 
+full_aquino_expression_plot <- filtered_data %>%  ggplot(aes(x = virus, y = fct_rev(Symbol), fill = proportion_expression_per_gene)) +
+  geom_tile() +
+  facet_nested(disease ~ Lineage + Cell,
+             scales = "free",
+             space = "free",
+             labeller = labeller(Lineage = wrap_text),
+              ) +  # Applying wrap_text to Lineage labels
+  theme_aw +
+  theme(legend.key.size = legend_width,
+        legend.position = "bottom",
+          strip.background.x  = element_rect(color="black", linewidth=1, linetype="solid"),
+        strip.text.x = element_text(size = 7),
+        legend.title = element_text(vjust = 0.7)) +  # Center-align legend title
+    scale_fill_viridis_c(
+         breaks = c(0, 0.25, 0.5, 0.75, 1),  # Set specific break points
+        labels = c("0", "0.25", "0.5", "0.75", "1"),  # Customize the labels
+         guide = guide_colorbar(
+             title.position = "top",     # Position title above the color bar
+             title.hjust = 0,          # Center the title horizontally
+             direction = "horizontal"   # Keep the color bar horizontal
+        #     label.position = "bottom"   # Position labels below the color bar
+             )) +
+    labs(x = "Activation state",
+         fill = "Proportion expression",
+         y = "Gene")
+
+ggsave(full_aquino_expression_plot,
+       file = file.path(base_dir, "figures/full_aquino_expression_plot.png"),
+       width = 39, height = 28, units = "cm")
+
+full_aquino_expression_plot +
+  labs(title = "Proportion of gene expression per gene",
+       subtitle = "Maximal proportion over treatments, ordered by CD14-Mono and DC")
+
+```
+
+
+```{r, fig.height=12, fig.width=16,}
 max_proportion_per_treatment_data <- filtered_data %>% 
   as_tibble() %>% 
     dplyr::group_by(Symbol, Cell) %>% 
@@ -980,7 +1042,16 @@ aquino_cell_expression_plot_max <- max_proportion_per_treatment_data  %>%
         legend.position = "bottom",
           strip.background.x  = element_rect(color="black", linewidth=1, linetype="solid"),
         legend.title = element_text(vjust = 0.7)) +  # Center-align legend title
-  scale_fill_viridis_c() +
+    scale_fill_viridis_c(
+         breaks = c(0, 0.25, 0.5, 0.75, 1),  # Set specific break points
+        labels = c("0", "0.25", "0.5", "0.75", "1"),  # Customize the labels
+         guide = guide_colorbar(
+             title.position = "top",     # Position title above the color bar
+             title.hjust = 0,          # Center the title horizontally
+             direction = "horizontal"   # Keep the color bar horizontal
+        #     label.position = "bottom"   # Position labels below the color bar
+             )
+  ) +
   labs(title = "Proportion of gene expression per gene",
        subtitle = "Maximal proportion over treatments, ordered by CD14-Mono and DC", 
        fill = "Proportion expression",
@@ -991,6 +1062,243 @@ aquino_cell_expression_plot_max <- max_proportion_per_treatment_data  %>%
 aquino_cell_expression_plot_max
 ```
 
+
+## Explore specificity of gene expression
+
+To identify the specificity of gene expression by cell type and activation state, a specificity metric tau is used. The metric ranges from 0-1, with a higher value indicating greater specificity.
+
+### Specificity by cell type
+
+```{r, fig.height=12, fig.width=16,}
+# Tau across treatment
+max_proportion_per_treatment_data <- as_tibble( max_proportion_per_treatment_data) %>% 
+   mutate(Cell = as.character(Cell))
+
+
+# Tau by celltypes
+wide_data <- max_proportion_per_treatment_data %>%
+  dplyr::select(-virus, -log2TPM, -log_mono_nk_ratio, -cd14_mono_prop, -cd56dim_nk_prop, -TPM, -Lineage) %>% 
+  pivot_wider(names_from = Cell, values_from = proportion_expression_per_gene)
+
+# Tau by celltypes
+wide_data <- max_proportion_per_treatment_data %>%
+  dplyr::select(-virus, -log2TPM, -log_mono_nk_ratio, -cd14_mono_prop, -cd56dim_nk_prop, -TPM, -Lineage) %>% 
+  tidyr::pivot_wider(names_from = Cell, values_from = proportion_expression_per_gene)
+
+tau_results <- wide_data %>%
+  dplyr::rowwise() %>%
+  dplyr::mutate(
+    tau = {
+      x <- dplyr::c_across(where(is.numeric))  # This ensures only numeric columns, typically the cell data, are used.
+      x_hat <- x / max(x, na.rm = TRUE)
+      tau_value <- sum(1 - x_hat, na.rm = TRUE) / (length(x) - 1)
+      tau_value
+    }
+  ) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::select(GeneID, Symbol, tau_per_cell = tau)
+  
+# Finding the cell with the maximum proportion_expression_per_gene for each gene
+max_cell_per_gene <- max_proportion_per_treatment_data %>%
+  as_tibble() %>% 
+  dplyr::group_by(GeneID, Symbol) %>%  # Group by GeneID and Symbol to handle multiple genes
+  dplyr::summarise(
+    Max_Cell = Cell[which.max(proportion_expression_per_gene)]  # Get the cell with the maximum proportion
+  ) %>%
+  ungroup()  # Ungroup for further operations if necessary
+
+
+
+cell_tau <- left_join(tau_results,
+                      max_cell_per_gene,
+                      by = c("GeneID", "Symbol")) %>% 
+  dplyr::mutate(Lineage = "Cell type") %>% 
+  dplyr::left_join(.,
+             max_proportion_per_treatment_data %>% 
+              dplyr::select(Symbol, disease),
+            by = "Symbol") %>% 
+  dplyr::mutate(Symbol = fct_relevel(Symbol, cell_factor_levels)) %>% 
+  group_by(Symbol) %>% 
+  slice(1) %>% 
+  ungroup()
+
+
+cell_tau_plot <- cell_tau %>%
+    ggplot(aes(x = "Max Cell, τ", y = fct_rev(Symbol), fill = tau_per_cell)) +
+    geom_tile() +  # Tiles for heatmap
+    geom_text(aes(label = Max_Cell), color = "white", size = 3, vjust = 0.4) +  # Add labels for Max_Cell
+    scale_fill_gradient(low = "grey90", high = "darkslategrey", limits = c(0, 1),
+                        guide = guide_colorbar(
+                            title.position = "top",     # Position title above the color bar
+                            title.hjust = 0.5,          # Center the title horizontally
+                            direction = "horizontal",   # Keep the color bar horizontal
+                            label.position = "bottom"   # Position labels below the color bar
+                        )) +  # Gradient fill
+    facet_nested(disease ~ Lineage, scales = "free", space = "free") +
+    labs(x = NULL, y = NULL, fill = "τ") +  # Remove x-axis title, adjust legend title
+    theme_minimal(base_family = "Helvetica", base_size = 14) +
+    theme(
+        axis.title.y = element_blank(),  # Remove y-axis title
+        axis.text.y = element_blank(),  # Remove y-axis text if unnecessary
+        axis.ticks.y = element_blank(),  # Remove y-axis ticks
+        axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1),
+        panel.spacing = unit(0, "lines"),  # Remove space between panels
+        strip.background.x = element_rect(fill = NA, colour = "black", linewidth = 1),  # Black box around facet headings
+        plot.margin = unit(c(1, 1, 1, 1), "points"),  # Adjust plot margins
+        legend.position = "bottom",
+        legend.title = element_text(vjust = 0.7),
+        legend.key.size = legend_width
+    )
+
+cell_tau %>%  gt() %>% 
+  opt_interactive()
+```
+
+
+
+#### Find number of instances a cell-type contains the maximal gene count
+
+```{r}
+# Find number of cell-types that contain the maximal gene count
+cell_tau %>% 
+  count(Max_Cell) %>% 
+  dplyr::mutate(percentage = n/34*100) %>% 
+  gt() %>% 
+  opt_interactive()
+```
+
+
+#### T test comparing specificity (tau) of myeloid cells (Dendritic and monocytes) to NK cells 
+```{r}
+dc_mono_values <- cell_tau %>% dplyr::filter(Max_Cell %in% c("pDC", "cDC", "MONO CD14", "MONO CD16")) %>% 
+                           dplyr::select(tau_per_cell) %>% unlist()
+
+NK_values <-  cell_tau %>%  dplyr::filter(Max_Cell %in% c("NK CD56brt", "NK CD56dim")) %>%
+                           dplyr::select(tau_per_cell) %>% unlist()
+
+
+# Calculate mean and standard deviation for the first group
+dc_mono_stats <- cell_tau %>% 
+  dplyr::filter(Max_Cell %in% c("pDC", "cDC", "MONO CD14", "MONO CD16")) %>% 
+  summarise(
+    mean_tau_per_cell = mean(tau_per_cell, na.rm = TRUE),
+    sd_tau_per_cell = sd(tau_per_cell, na.rm = TRUE)
+  )
+
+
+# Calculate mean and standard deviation for the second group
+NK_stats <- cell_tau %>%
+  filter(Max_Cell %in% c("NK CD56brt", "NK CD56dim")) %>%
+  summarise(
+    mean_tau_per_cell = mean(tau_per_cell, na.rm = TRUE),
+    sd_tau_per_cell = sd(tau_per_cell, na.rm = TRUE)
+  )
+
+# Compare the two groups using a t-test
+t_test_results <- t.test(x = dc_mono_values,
+                         y = NK_values,
+                         alternative = "two.sided",
+                         var.equal = F)
+                                                      
+t_test_results
+```
+
+### Specificity by cell activation state (viral stimulation)
+
+```{r, fig.height=20, fig.width=24, units = "cm"}
+# Tau by activation state
+
+# Find the cell type with the maximum proportion for each gene
+max_cell_per_gene <- filtered_data %>%
+  group_by(GeneID, Symbol) %>%
+  summarise(Max_Cell = Cell[which.max(proportion_expression_per_gene)],
+            Max_Proportion = max(proportion_expression_per_gene),
+            .groups = 'drop')
+
+# Merge to find corresponding activation state
+max_activationState_per_gene <- filtered_data %>%
+  inner_join(.,
+             max_cell_per_gene, 
+             by = c("GeneID", "Symbol", "Cell" = "Max_Cell")) %>%
+  dplyr::filter(proportion_expression_per_gene == Max_Proportion) %>%
+  dplyr::select(GeneID, Symbol, Cell, virus) %>%
+  dplyr::rename(Max_activationState = virus)
+
+
+
+# Filter original data to only include entries for the max cell per gene
+filtered_max_cells <- filtered_data %>%
+  inner_join(max_cell_per_gene, by = c("GeneID", "Symbol", "Cell" = "Max_Cell"))
+
+# Calculate tau for each activationState of these specific max cells
+tau_activationStates <- filtered_max_cells %>%
+  group_by(GeneID, Symbol) %>%
+  summarise(
+    tau_activationState = {
+      # Normalize the proportions by the maximum observed proportion in the group
+      x <- proportion_expression_per_gene
+      x_hat <- x / max(x)
+      tau_value <- sum(1 - x_hat) / (length(x) - 1)
+      tau_value
+    },
+    .groups = 'drop'
+  )
+
+
+activationState_tau <- left_join(max_activationState_per_gene,
+                           tau_activationStates,
+                           by = c("GeneID", "Symbol")) %>% 
+    dplyr::mutate(Lineage = "Activation state") %>% 
+  left_join(.,
+            max_proportion_per_treatment_data %>% 
+              dplyr::select(Symbol, disease),
+            by = "Symbol") %>% 
+  dplyr::mutate(Symbol = fct_relevel(Symbol, cell_factor_levels)) %>% 
+    group_by(Symbol) %>% 
+  slice(1) %>% 
+  ungroup() %>% 
+  arrange(desc(tau_activationState))
+
+activationState_tau %>% gt() %>% 
+  opt_interactive(use_filters = T )
+
+
+# Create a new column with mapped labels
+activationState_tau <- activationState_tau %>%
+  mutate(Max_activationState_Label = recode(Max_activationState, !!!plot_labels))
+
+activationState_tau_plot <- activationState_tau %>%
+  ggplot(aes(x = "Max Activation state, τ", y = fct_rev(Symbol), fill = tau_activationState)) +
+  geom_tile() +  # Tiles for heatmap
+  geom_text(aes(label = Max_activationState_Label), color = "white", size = 3, vjust = 0.4) +  # Add labels for Max_activationState
+  scale_fill_gradient(low = "grey90", high = "darkslategrey", limits = c(0,1), 
+                        guide = guide_colorbar(
+                             title.position = "top",     # Position title above the color bar
+                             title.hjust = 0.5,          # Center the title horizontally
+                             direction = "horizontal",   # Keep the color bar horizontal
+                             label.position = "bottom"   # Position labels below the color bar
+                         )) +  # Gradient fill
+  facet_nested(disease ~ Lineage, scales = "free", space = "free") +
+  labs(x = "Expression by Activation state", y = NULL, fill = "τ") +  # Labels
+  theme_minimal(base_family = "Helvetica",
+           base_size = 14) +
+  theme(
+    axis.title = element_blank(),  # Remove y-axis title
+      axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1),
+    axis.ticks.y = element_blank(),  # Remove y-axis ticks
+    panel.spacing = unit(0, "lines"),  # Remove space between panels
+    strip.background.x  = element_rect(fill = NA, colour = "black", linewidth = 1),  # Black box around facet headings
+    plot.margin = unit(c(1, 1, 1, 1), "points"), # Adjust plot margins
+    legend.position = "bottom",
+    legend.title = element_text(vjust = 0.7),
+    legend.key.size = legend_width,
+     axis.text.y = element_text(hjust = 0.5)  # Center-align y-axis text labels
+  )
+
+
+
+
+```
 # Enrichment analyses
 
 ## Enrichment of expression of NDD genes in peripheral cells, relative to random/brain related genes
@@ -1030,7 +1338,7 @@ saveRDS(NDD_geneID_in_aquino,
 ```
 
 
-```{r}
+```{r, eval = F}
 # Number of target genes
 target_genes <- NDD_geneID
 n_genes_tested <- length(target_genes)
@@ -1165,12 +1473,12 @@ enrichment_expression <- enrichment_histogram_data %>%
     ggplot(aes(x = raw_values, colour = background)) + 
     geom_density(linewidth = 1, show.legend = FALSE) +
     geom_vline(xintercept = 32, colour = "darkslategrey", linewidth = 1, linetype = "dashed") +
-    annotate("text", x = 32, y = Inf, size = 5, label = "\nExpressed genes", hjust = 1.1, angle= 90, colour = "darkslategrey") +
-    annotate("text", x = -Inf,  y = 0.99 * max(median_data$max_density),
+    annotate("text", x = 32, y = Inf, size = 4, label = "\nExpressed genes", hjust = 1.1, angle= 90, colour = "darkslategrey") +
+    annotate("text", x = 0,  y = 0.18,
              hjust = 0,
              label = "p-value < 0.001",
              colour = "indianred4", size = 4) +
-    annotate("text", x = -Inf,  y = 0.92 * max(median_data$max_density),
+    annotate("text", x = 0,  y = 0.17,
              label = "p-value < 0.001",
               hjust = 0,
              colour = "indianred3", size = 4) +
@@ -1212,7 +1520,7 @@ labs(x = "Number of genes", y = NULL, fill = NULL) +
           panel.grid.major.y = element_blank()
     )
 
-enrichment_plot <- (aquino_gene_count +
+expression_enrichment_plot <- (aquino_gene_count +
                         theme(axis.text.x = element_text(angle = 0,
                                                          hjust = 0.5)) | 
                         (
@@ -1238,7 +1546,7 @@ enrichment_plot <- (aquino_gene_count +
 
 ```{r, fig.width = 12, fig.height = 6}
 
-enrichment_plot
+expression_enrichment_plot
 
 ggsave(enrichment_plot,
        file = file.path(base_dir, "figures/thesis_gene_expression_enrichment_2.pdf"),
@@ -1255,13 +1563,328 @@ ggsave(enrichment_plot,
 This was undertaken using the opentargets API with a separate script. 500 bootstraps were chosen due to the limitations of the API, run with the following script
 ```{r, eval = F}
 
-source("r_scripts/opentargets_chen_bootstrap_parallelised.R")
+source(file.path(base_dir, "r_scripts/opentargets_chen_bootstrap_parallelised.R"))
 ```
+
+```{r, eval = F}
+# Get true results:
+NDD_geneID_in_aquino <- readRDS(file = file.path(base_dir, "/derived_data/NDD_ENSG_gene_ids_in_aquino.RDS"))
+all_gtex_genes <- readRDS(file = file.path(base_dir, "/derived_data/gtex_all_ENSG_ids.RDS"))
+all_gtex_genes_noNDD <-   setdiff(all_gtex_genes, NDD_geneID)
+brain_gtex_genes <- readRDS(file = file.path(base_dir, "/derived_data/gtex_brain_ENSG_ids.RDS"))
+brain_gtex_genes_noNDD <- setdiff(brain_gtex_genes, NDD_geneID)
+
+
+# GraphQL query for a single gene
+base_url <- "https://api.genetics.opentargets.org/graphql"
+l2g_query <- "
+query GenePageL2GPipelineQuery($geneId: String!) {
+    studiesAndLeadVariantsForGeneByL2G(geneId: $geneId) {
+        pval
+        yProbaModel
+        study {
+            studyId
+            traitReported
+            pubAuthor
+            pubDate
+            pmid
+            nInitial
+            nReplication
+            hasSumstats
+            nCases
+        }
+        variant {
+            rsId
+            id
+        }
+        odds {
+            oddsCI
+            oddsCILower
+            oddsCIUpper
+        }
+        beta {
+            betaCI
+            betaCILower
+            betaCIUpper
+            direction
+        }
+    }
+}"
+
+# Initialize an empty list to store results
+ all_filtered_data <- list()
+
+geneIds <- NDD_geneID_in_aquino
+
+  # Loop over each gene ID
+    for (geneId in geneIds) {
+        # Set variables object of arguments to be passed to endpoint
+        variables <- list("geneId" = geneId)
+
+        # Construct POST request body object with query string and variables
+        post_body <- list(query = l2g_query, variables = variables)
+
+        # Perform POST request
+        r <- POST(url = base_url, body = post_body, encode = 'json')
+
+        # Check for successful response
+        if (r$status_code == 200) {
+            df <- content(r)
+        } else {
+            warning("Failed to retrieve data for gene ", geneId, ". Status code: ", r$status_code)
+            next  # Skip to the next gene ID
+        }
+
+        # Extract the data
+        data_list <- df$data$studiesAndLeadVariantsForGeneByL2G
+
+        # Filter and process the data
+        filtered_data <- lapply(data_list, function(item) {
+            # Check if the item's study pubAuthor matches "Chen MH"
+            if (!is.null(item$study$pubAuthor) && item$study$pubAuthor == "Chen MH") {
+                item$geneId <- geneId  # Add geneId to the item
+                return(item)
+            } else {
+                return(NULL)  # Return NULL for items that don't match
+            }
+        })
+
+        # Remove NULL entries from the list
+        filtered_data <- Filter(Negate(is.null), filtered_data)
+
+        # Append to the master list
+        all_filtered_data <- c(all_filtered_data, filtered_data)
+    }
+
+    # Now, convert all_filtered_data to a dataframe
+    # iteration_no = 1
+    if (length(all_filtered_data) > 0) {
+        filtered_df <- do.call(rbind, lapply(all_filtered_data, function(item) {
+            # Extract the relevant fields and handle NULLs by replacing them with NA
+            data.frame(
+                iteration = "True_value",
+                gene = item$geneId,
+                pval = ifelse(is.null(item$pval), NA, item$pval),
+                studyId = ifelse(is.null(item$study$studyId), NA, item$study$studyId),
+                traitReported = ifelse(is.null(item$study$traitReported), NA, item$study$traitReported),
+                pubAuthor = ifelse(is.null(item$study$pubAuthor), NA, item$study$pubAuthor),
+                nInitial = ifelse(is.null(item$study$nInitial), NA, item$study$nInitial),
+                rsId = ifelse(is.null(item$variant$rsId), NA, item$variant$rsId),
+                variantId = ifelse(is.null(item$variant$id), NA, item$variant$id),
+                betaCI = ifelse(is.null(item$beta$betaCI), NA, item$beta$betaCI),
+                direction = ifelse(is.null(item$beta$direction), NA, item$beta$direction),
+                stringsAsFactors = FALSE
+            )
+        }))
+    } else {
+        filtered_df <- data.frame()  # Empty dataframe if no data matches the filter
+    }
+
+    # Display the dataframe
+    #print(filtered_df)
+
+
+    true_chen_associations <- filtered_df %>%
+        dplyr::filter(traitReported %in% c("White blood cell count",
+                                           "Lymphocyte counts",
+                                           "Monocyte count",
+                                           "Neutrophil count")) %>%
+        dplyr::mutate(traitReported = fct_relevel(traitReported, c("Lymphocyte counts",
+                                                                   "Monocyte count",
+                                                                   "Neutrophil count",
+                                                                   "White blood cell count"))) %>%
+        dplyr::count(iteration, traitReported) %>% #, studyId) %>%
+        pivot_wider(names_from = traitReported,
+                    values_from = n)
+
+
+saveRDS(true_chen_associations,
+        file = file.path(base_dir, "derived_data/chen_aquino_associations_true_result"))
+
+
+```
+
+
+```{r}
+
+true_chen_associations <- readRDS(file = file.path(base_dir, "derived_data/chen_aquino_associations_true_result"))
+
+# Load preprocessed bootstrap data
+allgene_bootstrap <- read_csv(file = file.path(base_dir,  "derived_data/chen_aquino_bootstrap_all_gtex_genes_parallel.csv"))
+
+brain_bootstrap <- read_csv(file = file.path(base_dir,  "derived_data/chen_aquino_bootstrap_brain_gtex_genes_parallel.csv"))
+
+chen_enrichment_results <- list(all_gtex_genes = allgene_bootstrap,
+                               brain_gtex_genes = brain_bootstrap)
+
+n_iterations = 500
+n_genes_tested = 32
+
+chen_cell_types <- c("White blood cell count",
+                "Lymphocyte counts",
+                "Monocyte count",
+                "Neutrophil count")
+
+
+
+
+chen_results_summary <- tibble()
+
+for (bg_name in names(chen_enrichment_results)) {
+   # bg_name <- names(chen_enrichment_results)[1]
+    
+    print(str_c("Background is: ", bg_name))
+    
+    for (chen_cell_type in chen_cell_types) {
+     #   chen_cell_type <- chen_cell_types[1]
+        
+
+        print(str_c("Chen cell type is: ", chen_cell_type))
+ 
+        true_result <- true_chen_associations %>% 
+            pull(chen_cell_type)
+                
+        random_counts <- chen_enrichment_results[[bg_name]] %>% 
+            pull(chen_cell_type)
+        
+        # Median number of expressed genes in random samples
+        median_random_associations <- median(random_counts)
+        
+        # Standard deviation
+        sd_random_associations <- sd(random_counts)
+        
+        # 95% Confidence Interval
+        ci_lower <- quantile(random_counts, 0.025)
+        ci_upper <- quantile(random_counts, 0.975)
+        
+        # Empirical p-value
+        p_value_empirical <- sum(random_counts >= true_result) / n_iterations
+        
+        results_df <- tibble(
+        background = bg_name,
+        chen_cell = chen_cell_type,
+        n_genes_tested = n_genes_tested,
+        true_result_associations = true_result,
+        median_random_expressed = median_random_expressed,
+        sd_random_expressed = sd_random_expressed,
+        ci_lower = as.numeric(ci_lower),
+        ci_upper = as.numeric(ci_upper),
+        p_value_empirical = p_value_empirical,
+        raw_values = list(random_counts)
+        )
+        
+        if (nrow(chen_results_summary) == 0) {
+            chen_results_summary <- results_df
+        } else {
+            chen_results_summary <- bind_rows(chen_results_summary,
+                                              results_df)
+        }
+        
+    }
+}
+        
+        
+chen_results_summary
+
+saveRDS(chen_results_summary,
+          file =  file.path(base_dir, "/derived_data/bootstrap_chen_associations.RDS"))
+
+
+
+```
+
+
+```{r}
+
+chen_results_summary <- readRDS(file =  file.path(base_dir, "/derived_data/bootstrap_chen_associations.RDS"))
+
+# Prepare data for density plots
+enrichment_histogram_data <- chen_results_summary %>% 
+  unnest(cols = c(raw_values)) %>% 
+  dplyr::select(background, chen_cell, raw_values, true_result_associations, p_value_empirical)
+
+# Calculate median and max density for each chen_cell and background
+median_data <- enrichment_histogram_data %>%
+  group_by(background, chen_cell) %>%
+    summarize(
+        median_value = median(raw_values),
+        max_density = {
+            d <- density(raw_values)
+            approx(d$x, d$y, xout = median(raw_values))$y
+        }
+  )
+
+# Merge p-values and true_result_associations for annotations
+annotation_data <- enrichment_histogram_data %>%
+  group_by(background, chen_cell) %>%
+  summarize(
+    true_result = unique(true_result_associations),
+    p_value_text = ifelse(
+      unique(p_value_empirical) == 0.0, 
+      "p-value < 0.002", 
+      paste0("p-value = ", formatC(unique(p_value_empirical), format = "f", digits = 3))
+    )
+  )
+
+# Filter annotations for specific backgrounds
+all_genes_annotations <- annotation_data %>% filter(background == "all_gtex_genes")
+brain_genes_annotations <- annotation_data %>% filter(background == "brain_gtex_genes")
+
+# Plot with facet_wrap
+chen_associations_bootstrap <- enrichment_histogram_data %>% 
+  ggplot(aes(x = raw_values, colour = background)) + 
+  geom_density(linewidth = 1, show.legend = FALSE) +
+  
+  # Add true result line for each facet
+  geom_vline(data = annotation_data, aes(xintercept = true_result), 
+             colour = "darkslategrey", linewidth = 1, linetype = "dashed") +
+  
+  # Add true result text annotations
+  geom_text(data = annotation_data, aes(x = true_result, y = Inf, label = "\nAssociation count"), 
+             size = 4, hjust = 1.05, angle = 90, colour = "darkslateblue") +
+  
+  # Add p-value annotations for all_gtex_genes in indianred4
+  geom_text(data = all_genes_annotations, aes(x = 1, y = 0.109, label = p_value_text), 
+            inherit.aes = FALSE, hjust = 0, vjust = 0, colour = "indianred4", size = 4) +
+  
+  # Add p-value annotations for brain_gtex_genes in indianred3
+  geom_text(data = brain_genes_annotations, aes(x = 1, y = 0.102, label = p_value_text), 
+            inherit.aes = FALSE, hjust = 0, vjust = 0, colour = "indianred3", size = 4) +
+  
+  # Scale, labels, and themes
+  scale_x_continuous(limits = c(0, 50), breaks = c(0, 10, 20, 30, 40, 50)) +
+    scale_y_continuous(limits = c(0, 0.11)) +
+  scale_colour_manual(values = my_palette, labels = plot_labeller) +
+  labs(x = "Number of associations", y = "Density", colour = "Background") +
+  
+  # Add median line for each background
+  geom_segment(data = median_data, aes(x = median_value, xend = median_value, 
+                                       colour = background, y = 0, yend = max_density), 
+               linetype = "dashed", linewidth = 1) +
+  
+  # Add facets
+  facet_wrap(~ chen_cell, nrow = 1) +
+  
+  guides(colour = guide_legend(override.aes = list(linetype = "solid", size = 1.5))) +
+  theme(
+    legend.key = element_rect(fill = NA, color = NA),
+    panel.grid.major.x = element_line(),
+    panel.grid.major.y = element_blank(),
+    panel.grid.minor.y = element_blank()
+  )
+```
+
+
+```{r, fig.width=16, fig.height=7}
+chen_associations_bootstrap
+
+```
+
 
 
 ## Enrichment of maximal gene expression in innate immune cells
 
-```{r}
+```{r, eval = F}
 
 innate_cells <- c("cDC",
                   "pDC",
@@ -1372,6 +1995,8 @@ saveRDS(results_df,
 
 ```
 
+
+
 ```{r}
 
 results_df <- readRDS(file =  file.path(base_dir, "/derived_data/bootstrap_innate_max_expression.RDS"))
@@ -1388,16 +2013,16 @@ median_data <- enrichment_histogram_data %>%
   )
 
    
-enrichment_expression <- enrichment_histogram_data %>% 
+innate_enrichment_expression <- enrichment_histogram_data %>% 
     ggplot(aes(x = raw_values, colour = background)) + 
     geom_density(linewidth = 1, show.legend = FALSE) +
     geom_vline(xintercept = true_result_innate, colour = "darkslategrey", linewidth = 1, linetype = "dashed") +
     annotate("text", x = true_result_innate, y = Inf, size = 5, label = "\nInnate cell max", hjust = 1.1, angle= 90, colour = "darkslategrey") +
-        annotate("text", x = -Inf,  y = 0.99 * max(median_data$max_density),
+        annotate("text", x = 0,  y = 0.99 * max(median_data$max_density),
              hjust = 0,
              label = "p-value = 0.009",
              colour = "indianred4", size = 4) +
-    annotate("text", x = -Inf,  y = 0.92 * max(median_data$max_density),
+    annotate("text", x = 0,  y = 0.92 * max(median_data$max_density),
              label = "p-value = 0.007",
               hjust = 0,
              colour = "indianred3", size = 4) +
@@ -1418,234 +2043,19 @@ enrichment_expression <- enrichment_histogram_data %>%
     )
 
 
-enrichment_expression
-```
+innate_enrichment_expression
 
+ggsave(innate_enrichment_expression,
+       file = file.path(base_dir, "/figures/innate_bootstrap_results.png"),
+       units = "cm", height = 13, width = 18)
+       
 
-## Explore specificity of gene expression
-
-To identify the specificity of gene expression by cell type and activation state, a specificity metric tau is used. The metric ranges from 0-1, with a higher value indicating greater specificity.
-
-### Specificity by cell type
-
-```{r, fig.height=12, fig.width=16,}
-# Tau across treatment
-max_proportion_per_treatment_data <- as_tibble( max_proportion_per_treatment_data) %>% 
-   mutate(Cell = as.character(Cell))
-
-
-# Tau by celltypes
-wide_data <- max_proportion_per_treatment_data %>%
-  dplyr::select(-virus, -log2TPM, -log_mono_nk_ratio, -cd14_mono_prop, -cd56dim_nk_prop, -TPM, -Lineage) %>% 
-  pivot_wider(names_from = Cell, values_from = proportion_expression_per_gene)
-
-# Tau by celltypes
-wide_data <- max_proportion_per_treatment_data %>%
-  dplyr::select(-virus, -log2TPM, -log_mono_nk_ratio, -cd14_mono_prop, -cd56dim_nk_prop, -TPM, -Lineage) %>% 
-  tidyr::pivot_wider(names_from = Cell, values_from = proportion_expression_per_gene)
-
-tau_results <- wide_data %>%
-  dplyr::rowwise() %>%
-  dplyr::mutate(
-    tau = {
-      x <- dplyr::c_across(where(is.numeric))  # This ensures only numeric columns, typically the cell data, are used.
-      x_hat <- x / max(x, na.rm = TRUE)
-      tau_value <- sum(1 - x_hat, na.rm = TRUE) / (length(x) - 1)
-      tau_value
-    }
-  ) %>% 
-  dplyr::ungroup() %>% 
-  dplyr::select(GeneID, Symbol, tau_per_cell = tau)
-  
-# Finding the cell with the maximum proportion_expression_per_gene for each gene
-max_cell_per_gene <- max_proportion_per_treatment_data %>%
-  as_tibble() %>% 
-  dplyr::group_by(GeneID, Symbol) %>%  # Group by GeneID and Symbol to handle multiple genes
-  dplyr::summarise(
-    Max_Cell = Cell[which.max(proportion_expression_per_gene)]  # Get the cell with the maximum proportion
-  ) %>%
-  ungroup()  # Ungroup for further operations if necessary
-
-
-
-cell_tau <- left_join(tau_results,
-                      max_cell_per_gene,
-                      by = c("GeneID", "Symbol")) %>% 
-  dplyr::mutate(Lineage = "Cell type") %>% 
-  dplyr::left_join(.,
-             max_proportion_per_treatment_data %>% 
-              dplyr::select(Symbol, disease),
-            by = "Symbol") %>% 
-  dplyr::mutate(Symbol = fct_relevel(Symbol, cell_factor_levels)) %>% 
-  group_by(Symbol) %>% 
-  slice(1) %>% 
-  ungroup()
-
-
-cell_tau_plot <- cell_tau %>%
-  ggplot(aes(x = "Max Cell, τ", y = fct_rev(Symbol), fill = tau_per_cell)) +
-  geom_tile() +  # Tiles for heatmap
-  geom_text(aes(label = Max_Cell), color = "white", size = 3, vjust = 0.4) +  # Add labels for Max_Cell
-  scale_fill_gradient(low = "grey90", high = "darkslategrey", limits = c(0, 1)) +  # Gradient fill
-  facet_nested(disease ~ Lineage, scales = "free", space = "free") +
-  labs(x = NULL, y = NULL, fill = "τ") +  # Remove x-axis title, adjust legend title
-  theme_minimal(base_family = "Helvetica", base_size = 14) +
-  theme(
-    axis.title.y = element_blank(),  # Remove y-axis title
-    axis.text.y = element_blank(),  # Remove y-axis text if unnecessary
-    axis.ticks.y = element_blank(),  # Remove y-axis ticks
-    axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1),
-    panel.spacing = unit(0, "lines"),  # Remove space between panels
-    strip.background.x = element_rect(fill = NA, colour = "black", linewidth = 1),  # Black box around facet headings
-    plot.margin = unit(c(1, 1, 1, 1), "points"),  # Adjust plot margins
-    legend.position = "bottom",
-    legend.title = element_text(vjust = 0.7),
-    legend.key.size = legend_width
-  )
-
-cell_tau %>%  gt() %>% 
-  opt_interactive()
-```
-
-
-
-#### Find number of instances a cell-type contains the maximal gene count
-
-```{r}
-# Find number of cell-types that contain the maximal gene count
-cell_tau %>% 
-  count(Max_Cell) %>% 
-  dplyr::mutate(percentage = n/34*100) %>% 
-  gt() %>% 
-  opt_interactive()
-```
-
-
-#### T test comparing specificity (tau) of myeloid cells (Dendritic and monocytes) to NK cells 
-```{r}
-dc_mono_values <- cell_tau %>% dplyr::filter(Max_Cell %in% c("pDC", "cDC", "MONO CD14", "MONO CD16")) %>% 
-                           dplyr::select(tau_per_cell) %>% unlist()
-
-NK_values <-  cell_tau %>%  dplyr::filter(Max_Cell %in% c("NK CD56brt", "NK CD56dim")) %>%
-                           dplyr::select(tau_per_cell) %>% unlist()
-
-
-# Calculate mean and standard deviation for the first group
-dc_mono_stats <- cell_tau %>% 
-  dplyr::filter(Max_Cell %in% c("pDC", "cDC", "MONO CD14", "MONO CD16")) %>% 
-  summarise(
-    mean_tau_per_cell = mean(tau_per_cell, na.rm = TRUE),
-    sd_tau_per_cell = sd(tau_per_cell, na.rm = TRUE)
-  )
-
-
-# Calculate mean and standard deviation for the second group
-NK_stats <- cell_tau %>%
-  filter(Max_Cell %in% c("NK CD56brt", "NK CD56dim")) %>%
-  summarise(
-    mean_tau_per_cell = mean(tau_per_cell, na.rm = TRUE),
-    sd_tau_per_cell = sd(tau_per_cell, na.rm = TRUE)
-  )
-
-# Compare the two groups using a t-test
-t_test_results <- t.test(x = dc_mono_values,
-                         y = NK_values,
-                         alternative = "two.sided",
-                         var.equal = F)
-                                                      
-t_test_results
-```
-
-### Specificity by cell activation state (viral stimulation)
-
-```{r, fig.height=20, fig.width=24, units = "cm"}
-# Tau by activation state
-
-# Find the cell type with the maximum proportion for each gene
-max_cell_per_gene <- filtered_data %>%
-  group_by(GeneID, Symbol) %>%
-  summarise(Max_Cell = Cell[which.max(proportion_expression_per_gene)],
-            Max_Proportion = max(proportion_expression_per_gene),
-            .groups = 'drop')
-
-# Merge to find corresponding activation state
-max_activationState_per_gene <- filtered_data %>%
-  inner_join(.,
-             max_cell_per_gene, 
-             by = c("GeneID", "Symbol", "Cell" = "Max_Cell")) %>%
-  dplyr::filter(proportion_expression_per_gene == Max_Proportion) %>%
-  dplyr::select(GeneID, Symbol, Cell, virus) %>%
-  dplyr::rename(Max_activationState = virus)
-
-
-
-# Filter original data to only include entries for the max cell per gene
-filtered_max_cells <- filtered_data %>%
-  inner_join(max_cell_per_gene, by = c("GeneID", "Symbol", "Cell" = "Max_Cell"))
-
-# Calculate tau for each activationState of these specific max cells
-tau_activationStates <- filtered_max_cells %>%
-  group_by(GeneID, Symbol) %>%
-  summarise(
-    tau_activationState = {
-      # Normalize the proportions by the maximum observed proportion in the group
-      x <- proportion_expression_per_gene
-      x_hat <- x / max(x)
-      tau_value <- sum(1 - x_hat) / (length(x) - 1)
-      tau_value
-    },
-    .groups = 'drop'
-  )
-
-
-activationState_tau <- left_join(max_activationState_per_gene,
-                           tau_activationStates,
-                           by = c("GeneID", "Symbol")) %>% 
-    dplyr::mutate(Lineage = "Activation state") %>% 
-  left_join(.,
-            max_proportion_per_treatment_data %>% 
-              dplyr::select(Symbol, disease),
-            by = "Symbol") %>% 
-  dplyr::mutate(Symbol = fct_relevel(Symbol, cell_factor_levels)) %>% 
-    group_by(Symbol) %>% 
-  slice(1) %>% 
-  ungroup() %>% 
-  arrange(desc(tau_activationState))
-
-activationState_tau %>% gt() %>% 
-  opt_interactive(use_filters = T )
-
-
-# Create a new column with mapped labels
-activationState_tau <- activationState_tau %>%
-  mutate(Max_activationState_Label = recode(Max_activationState, !!!plot_labels))
-
-activationState_tau_plot <- activationState_tau %>%
-  ggplot(aes(x = "Max Activation state, τ", y = fct_rev(Symbol), fill = tau_activationState)) +
-  geom_tile() +  # Tiles for heatmap
-  geom_text(aes(label = Max_activationState_Label), color = "white", size = 3, vjust = 0.4) +  # Add labels for Max_activationState
-  scale_fill_gradient(low = "grey90", high = "darkslategrey", limits = c(0,1) ) +  # Gradient fill
-  facet_nested(disease ~ Lineage, scales = "free", space = "free") +
-  labs(x = "Expression by Activation state", y = NULL, fill = "τ") +  # Labels
-  theme_minimal(base_family = "Helvetica",
-           base_size = 14) +
-  theme(
-    axis.title = element_blank(),  # Remove y-axis title
-      axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1),
-    axis.ticks.y = element_blank(),  # Remove y-axis ticks
-    panel.spacing = unit(0, "lines"),  # Remove space between panels
-    strip.background.x  = element_rect(fill = NA, colour = "black", linewidth = 1),  # Black box around facet headings
-    plot.margin = unit(c(1, 1, 1, 1), "points"), # Adjust plot margins
-    legend.position = "bottom",
-    legend.title = element_text(vjust = 0.7),
-    legend.key.size = legend_width,
-     axis.text.y = element_text(hjust = 0.5)  # Center-align y-axis text labels
-  )
-
-
-
+ggsave(innate_enrichment_expression,
+       file = file.path(base_dir, "/figures/innate_bootstrap_results.pdf"),
+       units = "cm", height = 13, width = 18)
 
 ```
+
 
 
 ## Combined plot including gene expression, cell type and activation state.
@@ -1680,7 +2090,46 @@ table_4b <- read_delim(str_c(args$aquino_eqtl_dir_path, "/aquino_supp_table_S4b.
             by = c("Symbol" = "gene")) %>% 
     relocate(Lineage, disease) 
 
+euro_african_full_plot <- table_4b %>% 
+    dplyr::mutate(Condition = factor(Condition, levels = c("NS", "IAV", "COV"))) %>% 
+     ggplot(aes(x =Condition, 
+               y = fct_rev(Symbol), 
+               fill = beta_lineage_adj)) +
+    geom_tile() +
+    facet_grid(disease ~ fct_relevel(Lineage, aquino_cell_order$Lineage),
+               scales = "free",
+               space = "free") +
+    scale_fill_gradient2(low = "darkblue", high = "darkred", mid = "white",
+                         midpoint = 0,  # This sets the midpoint at 0
+                         limit = c(min(table_4b$beta_lineage_adj, na.rm = TRUE), 
+                                   max(table_4b$beta_lineage_adj, na.rm = TRUE)),
+                         space = "Lab",
+                         name = "Log2 fold change",
+                         guide = guide_colorbar(
+                             title.position = "top",     # Position title above the color bar
+                             title.hjust = 0.5,          # Center the title horizontally
+                             direction = "horizontal",   # Keep the color bar horizontal
+                             label.position = "bottom"   # Position labels below the color bar
+                         )) +
+  #  scale_x_discrete(labels = plot_labeller) +
+  theme_aw +
+  theme(legend.key.size = legend_width) +
+   labs(fill = "Log2fold change",
+       x = "Activation stage", 
+       y = "Gene")
 
+ggsave(euro_african_full_plot,
+        file =  file.path(base_dir, "figures/euro_african_full_expression_plot.pdf"),
+       height = 20, width = 15, units = "cm")
+       
+ggsave(euro_african_full_plot,
+        file =  file.path(base_dir, "figures/euro_african_full_expression_plot.png"),
+       height = 20, width = 15, units = "cm")
+
+```
+
+
+```{r, fig.height=9, fig.width=6}
 table_4b_condensed <- table_4b %>% 
   group_by(Lineage, Symbol) %>%
   summarise(
@@ -1692,19 +2141,25 @@ table_4b_condensed <- table_4b %>%
 
 
 euro_vs_african_expression_plot <- table_4b_condensed %>% 
-   ggplot(aes(x = fct_relevel(Lineage, aquino_cell_order$Lineage), 
-              y = fct_rev(Symbol), 
-              fill = max_beta_lineage_adj_per_Condition)) +
-  geom_tile() +
-  facet_grid(disease ~ .,
-             scales = "free",
-             space = "free") +
+    ggplot(aes(x = fct_relevel(Lineage, aquino_cell_order$Lineage), 
+               y = fct_rev(Symbol), 
+               fill = max_beta_lineage_adj_per_Condition)) +
+    geom_tile() +
+    facet_grid(disease ~ .,
+               scales = "free",
+               space = "free") +
     scale_fill_gradient2(low = "darkblue", high = "darkred", mid = "white",
-                       midpoint = 0,  # This sets the midpoint at 0
-                       limit = c(min(table_4b$beta_lineage_adj, na.rm = TRUE), 
-                                 max(table_4b$beta_lineage_adj, na.rm = TRUE)),
-                       space = "Lab",
-                       name = "Log2 fold change") +
+                         midpoint = 0,  # This sets the midpoint at 0
+                         limit = c(min(table_4b$beta_lineage_adj, na.rm = TRUE), 
+                                   max(table_4b$beta_lineage_adj, na.rm = TRUE)),
+                         space = "Lab",
+                         name = "Log2 fold change",
+                         guide = guide_colorbar(
+                             title.position = "top",     # Position title above the color bar
+                             title.hjust = 0.5,          # Center the title horizontally
+                             direction = "horizontal",   # Keep the color bar horizontal
+                             label.position = "bottom"   # Position labels below the color bar
+                         )) +
     scale_x_discrete(labels = plot_labeller) +
   theme_aw +
   theme(legend.key.size = legend_width) +
@@ -1720,64 +2175,81 @@ euro_vs_african_expression_plot +
 
 ```
 
-# Enrichment of gene expression results
-
-## Enrichment of Chen associations
-
-```{r}
-
-```
-
 
 
 # Compiled Figure 1
 
-```{r, fig.width = 18, fig.height= 20, units = "cm"}
-fig1_gene_expression_chen <- 
-  (
-    (aquino_gene_count + theme_aw + theme(legend.direction = "vertical", 
-                                          legend.title = element_text(vjust = 1)) | 
-       chen_gene_count +theme_aw + theme(legend.position = "bottom",
-                                         legend.title = element_text(vjust = 1)) | 
-       euro_vs_african_expression_plot + theme_aw + theme(legend.position = "bottom",
-                                                          panel.grid.major = element_blank(),
-                                                          panel.grid.minor = element_blank(),
-                                                          legend.key.width = unit(0.8, "cm"),
-                                                           legend.title = element_text(vjust = 1)) 
-    )+ 
-      plot_layout(guides = "keep", widths = c(1,4,1.5))
-  ) /
-  (
-    (aquino_cell_expression_plot_max  + theme_aw + 
+
+
+
+
+
+```{r, fig.height = 12, fig.width = 12}
+fig1_gene_expression_bootstrap <- (
+    ( aquino_gene_count | 
+          enrichment_expression +
+          labs(x = NULL) +
+          theme(
+              axis.text.x = element_text(angle = 0, hjust = 0.5))) /
+        plot_spacer() /
+        (plot_spacer() | total_aquino_gene_count + 
+             theme(axis.text.x = element_text(angle = 0, hjust = 0.5))) /
+        chen_gene_count_horizontal /
+        chen_associations_bootstrap +
+        theme(axis.text.x = element_text(angle = 0, hjust = 0.5))
+) + plot_layout(heights = c(6,-1.3, 0.7,  3, 6),
+                guides = "collect") +
+    plot_annotation(tag_levels = list(c("a", "b",  "", "c","d"))) &
+    theme(legend.direction = "vertical")
+
+fig1_gene_expression_bootstrap
+```
+
+```{r, fig.height = 18, fig.width = 18}
+ggsave(fig1_gene_expression_bootstrap,
+       file =  file.path(base_dir, "figures/fig_1_gene_expression_bootstrap.pdf"),
+       height = 30, width = 29, units = "cm")
+
+ggsave(fig1_gene_expression_bootstrap,
+       file =  file.path(base_dir, "figures/fig_1_gene_expression_bootstrap.png"),
+       height = 30, width = 29, units = "cm")
+```
+
+
+
+```{r, fig.width = 18, fig.height= 14, units = "cm"}
+
+
+fig2_aquino_gene_expression <-  ((aquino_cell_expression_plot_max  + theme_aw + 
        theme(legend.key.width = unit(0.8, "cm"),
+             legend.position = "bottom", legend.box = "vertical",
              legend.title = element_text(vjust = 1))  + 
        labs(title = NULL, subtitle = NULL) | 
-       cell_tau_plot + theme_aw +theme(strip.text.y = element_blank(),
+      ( cell_tau_plot + theme_aw +theme(strip.text.y = element_blank(),
+                                       legend.position = "none",
                                        legend.key.width = unit(0.8, "cm"),
                                        legend.title = element_text(vjust = 1)) | 
+            plot_spacer() |
        activationState_tau_plot + labs(x = NULL) + theme_aw +  theme(axis.text.y = element_blank(),
                                                                axis.ticks.y = element_blank(), 
                                                                legend.key.width = unit(0.8, "cm"),
-                                                               legend.title = element_text(vjust = 1)
-                                                               )
-    ) +
-      plot_layout(widths = c(10,1.6,1.6), guides = "collect") 
-  ) +
-  plot_layout(heights = c(3,8)) +
-  plot_annotation(tag_levels = list(c("a", "b", "c", "d", "e", "f")
-  )
-  ) 
+                                                               legend.title = element_text(vjust = 1),
+                                                                legend.position = "bottom", legend.box = "vertical"
+                                                               )) + 
+          plot_layout(guides = "collect", widths = c(5,-1.1, 5))  |
+   (euro_vs_african_expression_plot / plot_spacer()))) +
+      plot_layout(widths = c(12,4.3, 3)) +
+    plot_annotation(tag_levels = "a")
 
+fig2_aquino_gene_expression 
 
-fig1_gene_expression_chen
+ggsave(fig2_aquino_gene_expression,
+       height = 30, width = 39, units = "cm",
+       file = file.path(base_dir, "figures/fig2_aquino_gene_expression.pdf"))
 
-ggsave(fig1_gene_expression_chen,
-       height = 36, width = 32, units = "cm",
-       file = file.path(base_dir, "figures/fig_1_gene_expression_chen.pdf"))
-
-ggsave(fig1_gene_expression_chen,
-       height = 36, width = 32, units = "cm",
-       file = file.path(base_dir, "figures/fig_1_gene_expression_chen.png"))
+ggsave(fig2_aquino_gene_expression,
+       height = 30, width = 39, units = "cm",
+       file = file.path(base_dir, "figures/fig2_aquino_gene_expression.png"))
 ```
 
 # Individual figure panels
